@@ -1,0 +1,30 @@
+# Build outputs and caches
+out/
+**/out/
+__pycache__/
+*.py[cod]
+*.o
+*.elf
+*.nro
+*.map
+
+# Game installations, saves, and extracted resources
+data/
+mods/
+save/
+cache/
+main
+main_memory.bin
+mhgurecomp.exe
+*.arc
+*.gmd
+*.sarc
+*.nso
+*.nca
+
+# Local configuration and logs
+.env
+.env.*
+!.env.example
+*.ini
+*.log
