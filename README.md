@@ -24,7 +24,7 @@ To update, exit the game and repeat the same extract-and-merge steps. No separat
 ### Gathering and movement
 
 - **Gather without tools:** mine and catch bugs without carrying a pickaxe or bug net.
-- **Gather or carve in one action:** process the remaining uses at a gathering point in one interaction.
+- **Gather or carve in one action:** process the remaining uses at a gathering point in one interaction. To gather or carve only once, hold the controller's right shoulder button R and press A.
 - **Adjust gathering speed:** 1.00×–4.00×; default 1.50×.
 - **Adjust sprint before detection:** sprint speed is adjustable from 1.00×–2.00× (default 1.20×), and stamina cost from 0%–100% of normal (default 0%). These two settings apply only before a large monster detects the hunter.
 - Batch gathering stops when the item pouch is full. It does not add pouch slots or bypass the game's normal item limits and special gathering rules.
@@ -34,14 +34,14 @@ To update, exit the game and repeat the same extract-and-merge steps. No separat
 - **Automatic quest delivery:** each collected quest-goal item is submitted immediately and counts toward the required total. Extra items beyond the goal stay in the pouch.
 - **Automatic subquest delivery:** enable delivery-goal subquests to count the required items as they are collected.
 - **Settle other account items:** non-goal account items are converted to account points as soon as they are collected. Turn this option off when you want to keep an account item for crafting.
-- **Use the item-pouch delivery command anywhere:** this manual option has its own switch and works independently of automatic delivery.
+- **Manual item-pouch delivery:** during a quest, press controller Y to deliver all eligible items, or select an item and press A to deliver only that item. This option has its own switch and works independently of automatic delivery.
 - Automatic quest delivery follows the game's normal quest-progress flow for solo and multiplayer quests.
 
 If **Put transport items in the item pouch** is enabled, eligible carry items such as eggs or powderstones go into the pouch instead of being carried. Automatic delivery skips these transport items. Disable the option to carry them normally.
 
 ### Rewards, storage, and other options
 
-- Open the full item box from the camp courier.
+- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while R + A opens the Palico Board. During a quest, both A and R + A at the camp courier open the full item box.
 - Send all quest rewards and appraisal results to the item box, collect all three farm trade carts, or send all Meownster Hunters rewards to the box. If the box is full, remaining items stay available; the mod does not sell or discard them.
 - Ignore ambient heat and cold, so hot and cool drinks are not required.
 - Keep Palico enthusiasm at 99.
@@ -62,6 +62,13 @@ Press **Insert** → **MHGU Recomp QoL**. The main panel contains the individual
 Automatic delivery and manual item-pouch delivery are separate options. You can turn off each feature individually. Settings return to their defaults when the game restarts.
 
 ## Compatibility
+
+## Controls
+
+- **Gather one at a time:** hold the controller's right shoulder button R and press A when interacting with a gathering point. This temporarily performs one gather or carve instead of the full batch. R means the controller button, not the keyboard letter.
+- **Open the Palico Board:** before a quest, use R + A at the village or hub item box. Use A there to open the full item box. At the camp courier during a quest, A or R + A opens the full item box.
+- **Deliver items manually:** open the item pouch during a quest. Press controller Y to deliver all eligible items at once, or select one item and press A to deliver it individually. Enable **Deliver from the Item Pouch anywhere** in Forge; it is separate from automatic delivery.
+- **Deliver a transport item:** automatic delivery skips transport items. If a transport item is in your item pouch, use the manual delivery controls above when you want to turn it in. The game's normal delivery eligibility rules still apply.
 
 This release targets MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`. If a game update changes the Build ID, this plugin may need an update before it works correctly.
 
