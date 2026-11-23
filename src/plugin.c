@@ -777,9 +777,10 @@ static bool install_delivery_hooks(void) {
 #include "field_options.inc"
 #include "movement.inc"
 #include "auto_delivery.inc"
+#include "settings.inc"
 
 EXPORT void forge_onLoad(ForgePluginInfo *info) {
-    static const char name[] = "MHGU Recomp QoL 1.15.1";
+    static const char name[] = "MHGU Recomp QoL 1.16";
     if (!info) return;
     // Forge checks these fields against the loader version before initialization.
     info->major = 1, info->minor = 5, info->patch = 1;
@@ -794,6 +795,7 @@ EXPORT void forge_onInit(void) {
         g_main = 0;
         return;
     }
+    settings_load(); // (before the hooks: a feature whose hooks fail is still switched off below)
     init_better_box();
     init_camp_box();
     init_field_options();
@@ -888,6 +890,7 @@ EXPORT void forge_onInit(void) {
               "personal-gathering: combination rate runtime probe %s",
               combine_probe_ok ? "PASSED" : "FAILED");
 #endif
+    settings_start();
 }
 
 EXPORT void forge_onUpdate(float dt) {
@@ -898,6 +901,7 @@ EXPORT void forge_onUpdate(float dt) {
     g_since_r = forge_input_isDown(BUTTON_R) ? 0 : g_since_r + (g_since_r <= SINGLE_FRAMES);
     mood_update();
     update_field_shortcuts();
+    settings_update();
 }
 
 EXPORT void forge_onImGuiInit(void *ctx, void *alloc, void *freefn) {
@@ -934,5 +938,6 @@ EXPORT void forge_onImGuiRender(void) {
     render_movement_options();
     render_field_options();
     igTextUnformatted("Stops on a full pouch. Eggs and living monsters keep their rules.", NULL);
+    render_settings_status();
     igTreePop();
 }

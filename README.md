@@ -59,7 +59,9 @@ Press **Insert** → **MHGU Recomp QoL**. The main panel contains the individual
 - **Automatic quest delivery** — quest goals, subquest goals, and other account items.
 - **Map, Hunter Arts and quest shortcuts** — map and marker display, Hunter Arts, and quest shortcuts.
 
-Automatic delivery and manual item-pouch delivery are separate options. You can turn off each feature individually. Settings return to their defaults when the game restarts.
+Automatic delivery and manual item-pouch delivery are separate options. You can turn off each feature individually.
+
+Your settings are saved automatically. A moment after you change a switch or slider, the plugin writes them to `mhgu_recomp_qol.ini` in the MHGU Recomp game folder, next to `mhgurecomp.ini`. The next time the game starts, it loads them from that file. The last line of the panel shows whether the settings were loaded or saved. To restore the defaults, exit the game and delete `mhgu_recomp_qol.ini`. Your game save data is not touched.
 
 ## Compatibility
 
