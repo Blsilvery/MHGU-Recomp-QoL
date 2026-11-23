@@ -6,7 +6,7 @@
 
 [下载 v1.16.2 完整安装包](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.16.2-mod-compatibility/MHGU_Recomp_QoL_v1.16.2_Mod_Compatibility.zip) · [查看全部版本](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [English](README.md)
 
-> **适用游戏版本：** MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`。
+> **运行要求：** MHGU Recomp，游戏版本 1.4.0。
 
 ## 安装
 
@@ -74,6 +74,6 @@
 - **手动缴纳：** 任务中打开道具袋，按手柄 Y 一次缴纳所有符合条件的道具；选中一件道具后按 A，只缴纳该件。需要在 Forge 中开启 **Deliver from the Item Pouch anywhere**；它与自动缴纳开关独立。
 - **缴纳搬运道具：** 自动缴纳会跳过搬运道具。若搬运道具已放入道具袋，可使用上述手动缴纳操作上交；是否符合缴纳条件仍遵循游戏原本规则。
 
-此版本针对 MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`。如果游戏更新改变了 Build ID，插件可能需要更新后才能正常工作。
+适用于 MHGU Recomp，游戏版本 1.4.0（也就是 MHGU Recomp 支持的版本）。
 
 部分采集代码基于 Vuze 的 [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0)。署名与授权信息见 [LICENSE](LICENSE)。

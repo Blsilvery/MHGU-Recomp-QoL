@@ -6,7 +6,7 @@ A ready-to-install quality-of-life plugin for **Monster Hunter Generations Ultim
 
 [Download the complete v1.16.2 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.16.2-mod-compatibility/MHGU_Recomp_QoL_v1.16.2_Mod_Compatibility.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
 
-> **Supported game build:** MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`.
+> **Requires:** MHGU Recomp, game version 1.4.0.
 
 ## Install
 
@@ -74,6 +74,6 @@ The plugin works alongside other Forge plugins that hook the same game functions
 - **Deliver items manually:** open the item pouch during a quest. Press controller Y to deliver all eligible items at once, or select one item and press A to deliver it individually. Enable **Deliver from the Item Pouch anywhere** in Forge; it is separate from automatic delivery.
 - **Deliver a transport item:** automatic delivery skips transport items. If a transport item is in your item pouch, use the manual delivery controls above when you want to turn it in. The game's normal delivery eligibility rules still apply.
 
-This release targets MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`. If a game update changes the Build ID, this plugin may need an update before it works correctly.
+Made for MHGU Recomp with game version 1.4.0, the version MHGU Recomp supports.
 
 Some gathering code is based on Vuze's [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0). See [LICENSE](LICENSE) for attribution and license details.
