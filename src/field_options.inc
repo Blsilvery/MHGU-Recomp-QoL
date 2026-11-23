@@ -48,8 +48,12 @@ static u32 carry_items_hook(u32 items, u32 item) {
 
 static bool field_hook(ForgeHook *state, u32 offset, void *detour,
                        u32 first, u32 second, const char *label, bool original_tail) {
+    // A function's entry another plugin hooked is shared (code_is); the map and marker hooks sit inside functions and
+    // their routes (field_options.S) rebuild the game's own instructions there, so another hook there leaves them off.
+    bool inside = offset == MAP_CHECK || offset == BOSS_CHECK;
     const volatile u32 *code = (const volatile u32 *)(g_main + offset);
-    if (!original_tail || code[0] != first || code[1] != second) {
+    bool same = inside ? code[0] == first && code[1] == second : code_is(offset, first, second);
+    if (!original_tail || !same) {
         forge_log(LOG_WARN, "personal-gathering: %s unavailable; original instructions are already changed", label);
         return false;
     }

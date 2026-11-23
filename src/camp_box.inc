@@ -300,7 +300,7 @@ static void init_camp_box(void) {
         {CAMP_GUI_SET_POSITION, 0xe92d4010}, {CAMP_GUI_GET_Y, 0xe5902298},
     };
     for (u32 i = 0; i < sizeof expected / sizeof *expected; i++) {
-        if (*(const u32 *)(g_main + expected[i][0]) != expected[i][1]) {
+        if (!code_is(expected[i][0], expected[i][1], 0)) {
             forge_log(LOG_WARN, "personal-gathering: camp menu signature differs at %x", expected[i][0]);
             return;
         }

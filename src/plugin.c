@@ -707,51 +707,82 @@ static bool combine_runtime_probe(void) {
 }
 #endif
 
-// Fingerprints from original MHGU 1.4.0 main FB08F1D20FD1204F...
-// Check every hook target before installing any hooks.
-static bool compatible(void) {
-    static const u32 signature[][3] = {
-        {GATHER, 0xE92D48F0, 0xE24DD010},
-        {PLAYER_ADD, 0xE92D4070, 0xE1A04003},
-        {PLAYER_ADD_QUEST, 0xE92D41F0, 0xE24DD008},
-        {MESSAGE, 0xE92D48F0, 0xE24DD008},
-        {POUCH_PROMPT, 0xE92D48F0, 0xE1A05000},
-        {EM009_SET_ACTION, 0xE92D41F0, 0xE1A05000},
-        {TOOL_CHECK, 0xE92D47F0, 0xE1A08002},
-        {TOOL_BREAK, 0xE92D41F0, 0xE24DD008},
-        {TOOL_RESOLVE, 0xE92D47F0, 0xE24DD008},
-        {0x2F8E70, 0x4622F983, 0xE1A00006},
-        {RESULT_SECTION, 0xE92D4FF0, 0xE24DD01C},
-        {MENU_ROWS, 0xE92D4070, 0xE1A05001},
-        {MENU_LOOKS, 0xE92D41F0, 0xE1A07001},
-        {REWARD_UPDATE, 0xE92D4010, 0xED2D8B02},
-        {APPRAISAL_HELP, 0xE92D4830, 0xE24DD010},
-        {APPRAISAL_UPDATE, 0xE92D4FF0, 0xE24DD00C},
-        {UI_SOUND, 0xE3500006, 0x812FFF1E},
-        {TRADE_CLAIM, 0xE92D4FF0, 0xE24DD034},
-        {TRADE_MENU_DRAW, 0xE92D4BF0, 0xE24DD008},
-        {MONNYAN_INIT, 0xE92D4010, 0xE1A04000},
-        {MONNYAN_UPDATE, 0xE92D41F0, 0xE24DD010},
-        {0x1535A0, 0xE5950000, 0xE5D010A5},
-        {HEAT_STATE, 0xE92D4070, 0xE1A04000},
-        {COLD_STATE, 0xE92D4070, 0xE1A04000},
-        {MOOD_SET, 0xE92D41F0, 0xE24DD018},
-        {MOOD_ADD, 0xE92D4BF0, 0xE24DD018},
-        {MOOD_SUB, 0xE92D4BF0, 0xE24DD018},
-        {MOOD_TIER, 0xE59F1088, 0xE5D0035C},
-        {0x2595F0, 0xE3510053, 0x8A00000E},
-        {0x259608, 0xE7F60000, 0xE1005780},
-        {0x0E92A8, 0xE5D00271, 0xE12FFF1E},
-        {COMBINE_RATE, 0xE92D4070, 0xED2D8B04},
-    };
-    for (u32 i = 0; i < sizeof signature / sizeof *signature; i++) {
-        const u32 *p = (const u32 *)(g_main + signature[i][0]);
-        if (p[0] != signature[i][1] || p[1] != signature[i][2]) {
-            forge_log(LOG_ERROR, "personal-gathering: MHGU 1.4.0 code mismatch at main+%x; disabled", signature[i][0]);
-            return false;
-        }
-    }
+// Another Forge plugin's hook: Forge writes `ldr pc, [pc, #-4]; detour` over the hooked function's first two words.
+// MHGU Recomp's Forge keeps the game's words under it and chains a second hook after the first (forge.c hook_install:
+// the new hook's original runs the earlier detour), so a function another plugin hooked can be hooked or called here
+// too. Before 1.16.2 such a function failed its fingerprint below and the whole plugin turned itself off ("hooks
+// unavailable" on every line), depending only on which mod loaded first (reported with Faster Field Hunter).
+#define FORGE_JUMP 0xE51FF004
+
+// The game's code at main+off is MHGU 1.4.0's (its first two words; second 0: the first only), or another plugin's
+// Forge hook is there
+static bool code_is(u32 off, u32 first, u32 second) {
+    const volatile u32 *code = (const volatile u32 *)(g_main + off);
+    if (code[0] == first && (!second || code[1] == second)) return true;
+    if (code[0] != FORGE_JUMP) return false;
+    forge_log(LOG_WARN, "personal-gathering: main+%x is already hooked by another plugin; sharing it", off);
     return true;
+}
+
+// The features the fingerprints below belong to
+enum {
+    FEAT_GATHER = 1 << 0, FEAT_TOOLS = 1 << 1, FEAT_REWARDS = 1 << 2, FEAT_TRADE = 1 << 3,
+    FEAT_MONNYAN = 1 << 4, FEAT_CLIMATE = 1 << 5, FEAT_MOOD = 1 << 6, FEAT_COMBINE = 1 << 7,
+    FEAT_ALL = 0xFF,
+};
+#define WRONG_BUILD_MISMATCHES 4  // this many fingerprints differing: not MHGU 1.4.0 at all
+
+// Fingerprints from original MHGU 1.4.0 main FB08F1D20FD1204F..., checked before any hook is installed. Returns the
+// features to leave off: one whose code differs (a cheat, a patch or another mod changed it) is skipped on its own
+// and the others still work; when several differ the game is not 1.4.0 and everything stays off, as before.
+static u32 incompatible_features(void) {
+    static const u32 signature[][4] = {
+        {GATHER, 0xE92D48F0, 0xE24DD010, FEAT_GATHER},
+        {PLAYER_ADD, 0xE92D4070, 0xE1A04003, FEAT_GATHER},
+        {PLAYER_ADD_QUEST, 0xE92D41F0, 0xE24DD008, FEAT_GATHER},
+        {MESSAGE, 0xE92D48F0, 0xE24DD008, FEAT_GATHER},
+        {POUCH_PROMPT, 0xE92D48F0, 0xE1A05000, FEAT_GATHER},
+        {EM009_SET_ACTION, 0xE92D41F0, 0xE1A05000, FEAT_GATHER},
+        {TOOL_CHECK, 0xE92D47F0, 0xE1A08002, FEAT_TOOLS},
+        {TOOL_BREAK, 0xE92D41F0, 0xE24DD008, FEAT_TOOLS},
+        {TOOL_RESOLVE, 0xE92D47F0, 0xE24DD008, FEAT_TOOLS},
+        {0x2F8E70, 0x4622F983, 0xE1A00006, FEAT_TOOLS},
+        {RESULT_SECTION, 0xE92D4FF0, 0xE24DD01C, FEAT_REWARDS},
+        {MENU_ROWS, 0xE92D4070, 0xE1A05001, FEAT_REWARDS | FEAT_MONNYAN},
+        {MENU_LOOKS, 0xE92D41F0, 0xE1A07001, FEAT_REWARDS | FEAT_MONNYAN},
+        {REWARD_UPDATE, 0xE92D4010, 0xED2D8B02, FEAT_REWARDS | FEAT_MONNYAN},
+        {APPRAISAL_HELP, 0xE92D4830, 0xE24DD010, FEAT_REWARDS},
+        {APPRAISAL_UPDATE, 0xE92D4FF0, 0xE24DD00C, FEAT_REWARDS},
+        {UI_SOUND, 0xE3500006, 0x812FFF1E, FEAT_REWARDS | FEAT_MONNYAN},
+        {TRADE_CLAIM, 0xE92D4FF0, 0xE24DD034, FEAT_TRADE},
+        {TRADE_MENU_DRAW, 0xE92D4BF0, 0xE24DD008, FEAT_TRADE},
+        {MONNYAN_INIT, 0xE92D4010, 0xE1A04000, FEAT_MONNYAN},
+        {MONNYAN_UPDATE, 0xE92D41F0, 0xE24DD010, FEAT_MONNYAN},
+        {0x1535A0, 0xE5950000, 0xE5D010A5, FEAT_REWARDS | FEAT_TRADE | FEAT_MONNYAN},
+        {HEAT_STATE, 0xE92D4070, 0xE1A04000, FEAT_CLIMATE},
+        {COLD_STATE, 0xE92D4070, 0xE1A04000, FEAT_CLIMATE},
+        {MOOD_SET, 0xE92D41F0, 0xE24DD018, FEAT_MOOD},
+        {MOOD_ADD, 0xE92D4BF0, 0xE24DD018, FEAT_MOOD},
+        {MOOD_SUB, 0xE92D4BF0, 0xE24DD018, FEAT_MOOD},
+        {MOOD_TIER, 0xE59F1088, 0xE5D0035C, FEAT_MOOD},
+        {0x2595F0, 0xE3510053, 0x8A00000E, FEAT_MOOD},
+        {0x259608, 0xE7F60000, 0xE1005780, FEAT_MOOD},
+        {0x0E92A8, 0xE5D00271, 0xE12FFF1E, FEAT_MOOD},
+        {COMBINE_RATE, 0xE92D4070, 0xED2D8B04, FEAT_COMBINE},
+    };
+    u32 off = 0, mismatches = 0;
+    for (u32 i = 0; i < sizeof signature / sizeof *signature; i++) {
+        if (code_is(signature[i][0], signature[i][1], signature[i][2])) continue;
+        forge_log(LOG_ERROR, "personal-gathering: MHGU 1.4.0 code mismatch at main+%x (changed by a cheat, patch or "
+                  "another mod?); the features using it are off", signature[i][0]);
+        off |= signature[i][3];
+        mismatches++;
+    }
+    if (mismatches >= WRONG_BUILD_MISMATCHES) {
+        forge_log(LOG_ERROR, "personal-gathering: %u code mismatches: not MHGU 1.4.0; disabled", mismatches);
+        return FEAT_ALL;
+    }
+    return off;
 }
 
 static bool hook(ForgeHook *h, u32 target, void *detour) {
@@ -761,10 +792,7 @@ static bool hook(ForgeHook *h, u32 target, void *detour) {
 }
 
 static bool install_delivery_hooks(void) {
-    const u32 *deliver = (const u32 *)(g_main + DELIVERABLE);
-    const u32 *clear = (const u32 *)(g_main + CLEAR_ACCOUNT);
-    if (deliver[0] != 0xE92D4830 || deliver[1] != 0xE59F0134 ||
-        clear[0] != 0xE92D4FF0 || clear[1] != 0xE24DD004)
+    if (!code_is(DELIVERABLE, 0xE92D4830, 0xE59F0134) || !code_is(CLEAR_ACCOUNT, 0xE92D4FF0, 0xE24DD004))
         return false;
 
     bool deliver_ok = hook(&g_deliverable_hook, DELIVERABLE, deliverable_hook);
@@ -780,7 +808,7 @@ static bool install_delivery_hooks(void) {
 #include "settings.inc"
 
 EXPORT void forge_onLoad(ForgePluginInfo *info) {
-    static const char name[] = "MHGU Recomp QoL 1.16.1";
+    static const char name[] = "MHGU Recomp QoL 1.16.2";
     if (!info) return;
     // Forge checks these fields against the loader version before initialization.
     info->major = 1, info->minor = 5, info->patch = 1;
@@ -790,30 +818,35 @@ EXPORT void forge_onLoad(ForgePluginInfo *info) {
 
 EXPORT void forge_onInit(void) {
     g_main = forge_mem_getMainTextAddr();
-    if (!g_main || !compatible()) {
+    u32 off = g_main ? incompatible_features() : FEAT_ALL;
+    if (off == FEAT_ALL) {
         g_toolless = g_gather_all = false;
         g_main = 0;
         return;
     }
+    // (a feature whose code differs: none of its hooks; it shows "unavailable" in the menu as a failed hook does)
+    bool gather = !(off & FEAT_GATHER), tools = !(off & FEAT_TOOLS), rewards = !(off & FEAT_REWARDS);
+    bool trade = !(off & FEAT_TRADE), monnyan = !(off & FEAT_MONNYAN), climate = !(off & FEAT_CLIMATE);
+    bool mood = !(off & FEAT_MOOD), combine = !(off & FEAT_COMBINE);
     settings_load(); // (before the hooks: a feature whose hooks fail is still switched off below)
     init_better_box();
     init_camp_box();
     init_field_options();
     init_movement_options();
     init_auto_delivery();
-    bool tool_check_ok = hook(&g_tool_check_hook, TOOL_CHECK, tool_check_hook);
-    bool tool_break_ok = hook(&g_tool_break_hook, TOOL_BREAK, tool_break_hook);
-    bool tool_resolve_ok = hook(&g_tool_resolve_hook, TOOL_RESOLVE, tool_resolve_hook);
+    bool tool_check_ok = tools && hook(&g_tool_check_hook, TOOL_CHECK, tool_check_hook);
+    bool tool_break_ok = tools && hook(&g_tool_break_hook, TOOL_BREAK, tool_break_hook);
+    bool tool_resolve_ok = tools && hook(&g_tool_resolve_hook, TOOL_RESOLVE, tool_resolve_hook);
     g_toolless_hooked = tool_check_ok && tool_break_ok && tool_resolve_ok;
     if (!g_toolless_hooked) g_toolless = false;
     forge_log(g_toolless_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_toolless_hooked ? "tool-free mining and bug catching enabled; entry-only calls; normal tool icons" : "tool hooks FAILED; tools required");
-    bool add_ok = hook(&g_add_hook, PLAYER_ADD, add_hook);
-    bool quest_add_ok = hook(&g_add_quest_hook, PLAYER_ADD_QUEST, add_quest_hook);
+    bool add_ok = gather && hook(&g_add_hook, PLAYER_ADD, add_hook);
+    bool quest_add_ok = gather && hook(&g_add_quest_hook, PLAYER_ADD_QUEST, add_quest_hook);
     bool pouch = add_ok && quest_add_ok;
-    if (!hook(&g_message_hook, MESSAGE, message_hook))
+    if (gather && !hook(&g_message_hook, MESSAGE, message_hook))
         forge_log(LOG_WARN, "personal-gathering: message hook failed; original notifications retained");
-    bool carve_guard = hook(&g_play_dead_hook, EM009_SET_ACTION, play_dead_hook);
+    bool carve_guard = gather && hook(&g_play_dead_hook, EM009_SET_ACTION, play_dead_hook);
     g_gather_hooked = pouch && carve_guard && hook(&g_gather_hook, GATHER, gather_hook);
     if (!g_gather_hooked) g_gather_all = false;
     forge_log(g_gather_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
@@ -823,11 +856,12 @@ EXPORT void forge_onInit(void) {
     forge_log(g_delivery_hooked ? LOG_INFO : LOG_WARN, "personal-gathering: %s",
               g_delivery_hooked ? "manual item pouch delivery enabled in any area"
                                 : "delivery hooks unavailable; normal delivery rules retained");
-    bool rows_ok = hook(&g_rows_hook, MENU_ROWS, rows_hook);
-    bool looks_ok = hook(&g_looks_hook, MENU_LOOKS, looks_hook);
-    bool update_ok = hook(&g_reward_update_hook, REWARD_UPDATE, reward_update_hook);
-    bool sound_ok = hook(&g_sound_hook, UI_SOUND, sound_hook);
-    bool help_ok = hook(&g_appraisal_help_hook, APPRAISAL_HELP, appraisal_help_hook);
+    bool menu = rewards || monnyan; // (the reward menu's hooks serve both)
+    bool rows_ok = menu && hook(&g_rows_hook, MENU_ROWS, rows_hook);
+    bool looks_ok = menu && hook(&g_looks_hook, MENU_LOOKS, looks_hook);
+    bool update_ok = menu && hook(&g_reward_update_hook, REWARD_UPDATE, reward_update_hook);
+    bool sound_ok = menu && hook(&g_sound_hook, UI_SOUND, sound_hook);
+    bool help_ok = rewards && hook(&g_appraisal_help_hook, APPRAISAL_HELP, appraisal_help_hook);
     bool appraisal_ok = rows_ok && looks_ok && update_ok && help_ok &&
                         hook(&g_appraisal_hook, APPRAISAL_UPDATE, appraisal_hook);
     g_rewards_hooked = rows_ok && looks_ok && update_ok && sound_ok && appraisal_ok &&
@@ -836,38 +870,38 @@ EXPORT void forge_onInit(void) {
     forge_log(g_rewards_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_rewards_hooked ? "quest reward send-all enabled; Chinese menu row; stop on full box"
                                : "reward hooks FAILED; original reward menu retained");
-    bool trade_menu_ok = hook(&g_trade_menu_hook, TRADE_MENU_DRAW, trade_menu_hook);
-    bool trade_claim_ok = hook(&g_trade_hook, TRADE_CLAIM, trade_hook);
+    bool trade_menu_ok = trade && hook(&g_trade_menu_hook, TRADE_MENU_DRAW, trade_menu_hook);
+    bool trade_claim_ok = trade && hook(&g_trade_hook, TRADE_CLAIM, trade_hook);
     g_trade_hooked = trade_menu_ok && trade_claim_ok;
     if (!g_trade_hooked) g_trade_all = false;
     forge_log(g_trade_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_trade_hooked ? "farm trade send-all enabled; all three carts; preserve items on full box"
                              : "trade hooks FAILED; original farm claim menu retained");
-    bool monnyan_init_ok = hook(&g_monnyan_init_hook, MONNYAN_INIT, monnyan_init_hook);
-    bool monnyan_update_ok = hook(&g_monnyan_hook, MONNYAN_UPDATE, monnyan_hook);
+    bool monnyan_init_ok = monnyan && hook(&g_monnyan_init_hook, MONNYAN_INIT, monnyan_init_hook);
+    bool monnyan_update_ok = monnyan && hook(&g_monnyan_hook, MONNYAN_UPDATE, monnyan_hook);
     g_monnyan_hooked = rows_ok && looks_ok && update_ok && sound_ok && monnyan_init_ok && monnyan_update_ok;
     if (!g_monnyan_hooked) g_monnyan_all = false;
     forge_log(g_monnyan_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_monnyan_hooked ? "Meownster Hunters send-all enabled; retain rewards on full box"
                                : "Meownster Hunters hooks FAILED; original menu retained");
     forge_log(LOG_INFO, "personal-gathering: send-all labels follow game language (eng/fre/spa/ger/ita/chT/chS)");
-    bool heat_ok = hook(&g_heat_hook, HEAT_STATE, heat_state_hook);
-    bool cold_ok = hook(&g_cold_hook, COLD_STATE, cold_state_hook);
+    bool heat_ok = climate && hook(&g_heat_hook, HEAT_STATE, heat_state_hook);
+    bool cold_ok = climate && hook(&g_cold_hook, COLD_STATE, cold_state_hook);
     g_climate_hooked = heat_ok && cold_ok;
     if (!g_climate_hooked) g_no_extreme = false;
     forge_log(g_climate_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_climate_hooked ? "ambient heat/cold disabled for local hunter; hot/cool drinks not required"
                                : "climate hooks FAILED; original temperature rules retained");
-    bool mood_set_ok = hook(&g_mood_set_hook, MOOD_SET, mood_set_hook);
-    bool mood_add_ok = hook(&g_mood_add_hook, MOOD_ADD, mood_add_hook);
-    bool mood_sub_ok = hook(&g_mood_sub_hook, MOOD_SUB, mood_sub_hook);
-    bool mood_tier_ok = hook(&g_mood_tier_hook, MOOD_TIER, mood_tier_hook);
+    bool mood_set_ok = mood && hook(&g_mood_set_hook, MOOD_SET, mood_set_hook);
+    bool mood_add_ok = mood && hook(&g_mood_add_hook, MOOD_ADD, mood_add_hook);
+    bool mood_sub_ok = mood && hook(&g_mood_sub_hook, MOOD_SUB, mood_sub_hook);
+    bool mood_tier_ok = mood && hook(&g_mood_tier_hook, MOOD_TIER, mood_tier_hook);
     g_mood_hooked = mood_set_ok && mood_add_ok && mood_sub_ok && mood_tier_ok;
     if (!g_mood_hooked) g_max_mood = false;
     forge_log(g_mood_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_mood_hooked ? "Palico enthusiasm locked at 99; all owned slots; activity costs bypassed"
                             : "Palico mood hooks FAILED; original enthusiasm retained");
-    g_combine_hooked = hook(&g_combine_rate_hook, COMBINE_RATE, combine_rate_hook);
+    g_combine_hooked = combine && hook(&g_combine_rate_hook, COMBINE_RATE, combine_rate_hook);
     if (!g_combine_hooked) g_combine_always = false;
     forge_log(g_combine_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_combine_hooked ? "item combination success rate set to 100%"

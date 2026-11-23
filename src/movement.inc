@@ -78,8 +78,7 @@ static void update_sprint_stamina(void) {
 static void init_movement_options(void) {
     g_motion_rate_hooked = field_hook(&g_motion_rate_hook, SET_MOTION_RATE, motion_rate_hook,
                                        0xeeb50ac0, 0xe300150c, "gathering and sprint speed", true);
-    const u32 *player_query = (const u32 *)(g_main + LOCAL_HUNTER);
-    g_sprint_stamina_ready = player_query[0] == 0xe92d4010 && player_query[1] == 0xe1a04000;
+    g_sprint_stamina_ready = code_is(LOCAL_HUNTER, 0xe92d4010, 0xe1a04000);
     forge_log(g_sprint_stamina_ready ? LOG_INFO : LOG_WARN, "personal-gathering: sprint stamina %s",
               g_sprint_stamina_ready ? "ready" : "unavailable; normal stamina cost retained");
 }

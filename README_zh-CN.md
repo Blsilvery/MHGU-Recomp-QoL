@@ -2,9 +2,9 @@
 
 为 **《怪物猎人 XX 世代终极版 Recompiled》（MHGU Recomp）** 提供便利功能的 Forge 插件。它可以加快采集、简化任务缴纳和报酬收取，并提供可单独开关的狩猎辅助选项。
 
-**当前版本：** v1.15.1 · 菜单排列版
+**当前版本：** v1.16.2 · 模组兼容版
 
-[下载 v1.15.1 完整安装包](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.15.1-menu-order/MHGU_Recomp_QoL_v1.15.1_Menu_Order.zip) · [查看全部版本](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [English](README.md)
+[下载 v1.16.2 完整安装包](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.16.2-mod-compatibility/MHGU_Recomp_QoL_v1.16.2_Mod_Compatibility.zip) · [查看全部版本](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [English](README.md)
 
 > **适用游戏版本：** MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`。
 
@@ -64,6 +64,8 @@
 设置会自动保存：修改开关或滑条后稍等片刻，插件就会把设置写入游戏目录下的 `mhgu_recomp_qol.ini`（和 `mhgurecomp.ini` 在同一文件夹），下次启动游戏时自动读取。面板最后一行会显示设置是否已读取或保存。想恢复默认值，先退出游戏，再删除 `mhgu_recomp_qol.ini`。保存设置不会改动游戏存档。
 
 ## 兼容性
+
+本插件可以和挂接同一游戏函数的其他 Forge 插件（例如 Faster Field Hunter）一起使用，不受加载顺序影响。两个 mod 改动同一项内容时，效果可能会叠加，请在其中一个 mod 里关闭对应选项。如果作弊码或补丁改动了本插件需要的游戏函数，只会关闭用到它的那一项功能，`log.txt` 会记录具体地址。
 
 ## 操作说明
 

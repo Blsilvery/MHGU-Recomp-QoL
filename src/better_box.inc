@@ -26,12 +26,8 @@ static u32 box_open_hook(u32 owner, u32 arg, u32 x, u32 y, u32 mode) {
 }
 
 static void init_better_box(void) {
-    const u32 *menu = (const u32 *)(g_main + ITEM_BOX_MENU);
-    const u32 *open = (const u32 *)(g_main + OPEN_ITEM_BOX);
-    const u32 *palico = (const u32 *)(g_main + OPEN_PALICO_BOX);
-    if (menu[0] != 0xE92D41F0 || menu[1] != 0xE24DD008 ||
-        open[0] != 0xE92D4070 || open[1] != 0xE24DD010 ||
-        palico[0] != 0xE92D4830 || palico[1] != 0xE24DD010) {
+    if (!code_is(ITEM_BOX_MENU, 0xE92D41F0, 0xE24DD008) || !code_is(OPEN_ITEM_BOX, 0xE92D4070, 0xE24DD010) ||
+        !code_is(OPEN_PALICO_BOX, 0xE92D4830, 0xE24DD010)) {
         forge_log(LOG_WARN, "personal-gathering: box code differs; disable standalone BetterBox or other box patches");
         return;
     }

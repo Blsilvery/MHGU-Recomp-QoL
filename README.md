@@ -2,9 +2,9 @@
 
 A ready-to-install quality-of-life plugin for **Monster Hunter Generations Ultimate Recompiled (MHGU Recomp)**. It speeds up gathering, streamlines quest deliveries and rewards, and adds optional convenience settings—all controlled from the in-game Forge menu.
 
-**Current release:** v1.15.1 · Menu Order
+**Current release:** v1.16.2 · Mod Compatibility
 
-[Download the complete v1.15.1 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.15.1-menu-order/MHGU_Recomp_QoL_v1.15.1_Menu_Order.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
+[Download the complete v1.16.2 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.16.2-mod-compatibility/MHGU_Recomp_QoL_v1.16.2_Mod_Compatibility.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
 
 > **Supported game build:** MHGU Recomp Build ID `FB08F1D20FD1204FE7070672777F869B`.
 
@@ -64,6 +64,8 @@ Automatic delivery and manual item-pouch delivery are separate options. You can 
 Your settings are saved automatically. A moment after you change a switch or slider, the plugin writes them to `mhgu_recomp_qol.ini` in the MHGU Recomp game folder, next to `mhgurecomp.ini`. The next time the game starts, it loads them from that file. The last line of the panel shows whether the settings were loaded or saved. To restore the defaults, exit the game and delete `mhgu_recomp_qol.ini`. Your game save data is not touched.
 
 ## Compatibility
+
+The plugin works alongside other Forge plugins that hook the same game functions, such as Faster Field Hunter, in any load order. When two mods change the same thing, their effects may stack; turn off the matching option in one of them. If a cheat or patch changes a game function this plugin needs, only the feature that uses it is turned off, and `log.txt` names the address.
 
 ## Controls
 

@@ -141,8 +141,7 @@ static void init_auto_delivery(void) {
         {POINTS_GOAL_COMPLETE, 0xe92d4800, 0xe59f107c},
     };
     for (u32 i = 0; i < sizeof signatures / sizeof *signatures; ++i) {
-        const u32 *code = (const u32 *)(g_main + signatures[i][0]);
-        if (code[0] != signatures[i][1] || code[1] != signatures[i][2]) {
+        if (!code_is(signatures[i][0], signatures[i][1], signatures[i][2])) {
             forge_log(LOG_WARN, "personal-gathering: auto delivery unavailable at main+%x", signatures[i][0]);
             return;
         }
