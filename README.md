@@ -76,4 +76,4 @@ The plugin works alongside other Forge plugins that hook the same game functions
 
 Made for MHGU Recomp with game version 1.4.0, the version MHGU Recomp supports.
 
-Some gathering code is based on Vuze's [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0). See [LICENSE](LICENSE) for attribution and license details.
+Some gathering code is based on Vuze's [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0). This mod is released under the [MIT License](LICENSE); see it for attribution and license details. Monster Hunter Generations Ultimate and its game files are the property of Capcom; the license covers only this mod's own code and files, not the game's content.

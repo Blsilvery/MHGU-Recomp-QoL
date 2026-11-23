@@ -76,4 +76,4 @@
 
 适用于 MHGU Recomp，游戏版本 1.4.0（也就是 MHGU Recomp 支持的版本）。
 
-部分采集代码基于 Vuze 的 [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0)。署名与授权信息见 [LICENSE](LICENSE)。
+部分采集代码基于 Vuze 的 [MHGU Field QoL v0.7.0](https://github.com/mhvuze/mhgu-field-qol/tree/v0.7.0)。本模组以 [MIT 协议](LICENSE)发布，署名与授权信息见该文件。怪物猎人 XX 终极版及其游戏文件归 Capcom 所有；本协议只涵盖本模组自己的代码和文件，不包括游戏内容。
