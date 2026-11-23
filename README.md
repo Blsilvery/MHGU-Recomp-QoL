@@ -2,6 +2,8 @@
 
 A ready-to-install quality-of-life plugin for **Monster Hunter Generations Ultimate Recompiled (MHGU Recomp)**. It speeds up gathering, streamlines quest deliveries and rewards, and adds optional convenience settings—all controlled from the in-game Forge menu.
 
+The goal is to bring some of MHGU's dated, tedious systems closer to how newer games such as Monster Hunter: World and Monster Hunter Rise handle them, while staying careful with save data and multiplayer. Every feature can be turned off on its own.
+
 **Current release:** v1.16.2 · Mod Compatibility
 
 [Download the complete v1.16.2 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.16.2-mod-compatibility/MHGU_Recomp_QoL_v1.16.2_Mod_Compatibility.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
@@ -27,7 +29,7 @@ To update, exit the game and repeat the same extract-and-merge steps. No separat
 - **Gather or carve in one action:** process the remaining uses at a gathering point in one interaction. To gather or carve only once, hold the controller's right shoulder button R and press A.
 - **Adjust gathering speed:** 1.00×–4.00×; default 1.50×.
 - **Adjust sprint before detection:** sprint speed is adjustable from 1.00×–2.00× (default 1.20×), and stamina cost from 0%–100% of normal (default 0%). These two settings apply only before a large monster detects the hunter.
-- Batch gathering stops when the item pouch is full. It does not add pouch slots or bypass the game's normal item limits and special gathering rules.
+- Batch gathering stops when the item pouch is full. Pouch size, item limits, and special gathering rules are currently the same as in the base game.
 
 ### Quest and account-item delivery
 
