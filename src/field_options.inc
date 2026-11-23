@@ -5,9 +5,17 @@
 #define BOSS_CHECK 0x61CC94
 #define STYLE_ART_SLOTS 0x2778AC
 #define QUEST_OBJECT 0x188AD90
-#define END_DELAY_OWNER 0x2126498
 #define QUEST_END_STATE 0xEC
-#define END_DELAY_OBJECT 0x3830
+// The quest-end wait, as the cheat found it: owner+0x3830, then +0xBC (u16 frames). The owner (main+0x2126498, made at
+// main+B87A88) is the game's stack of scene units: its depth at +0x3820 and up to 8 units from +0x3828
+// (main+12730 returns the top one; popped levels are deleted and their slots cleared, main+B883C8). So +0x3830 is
+// not a field of the quest-end wait but whatever unit is the third level at the time. The cheat wrote to it on every
+// frame the buttons were held, in any scene: after the quest, in the village or while the game saved, it cleared a
+// halfword of some other unit, which could crash the game later (reported during the save after the quest).
+#define END_DELAY_OWNER 0x2126498
+#define SCENE_DEPTH 0x3820
+#define SCENE_UNITS 0x3828
+#define END_DELAY_LEVEL 2          // (owner + SCENE_UNITS + 4 * 2 = owner+0x3830)
 #define END_DELAY_FRAMES 0xBC
 
 enum { BUTTON_PLUS = 10, BUTTON_MINUS = 11, BUTTON_UP = 13, BUTTON_DOWN = 15 };
@@ -68,17 +76,32 @@ static void init_field_options(void) {
                                       *(const u32 *)(g_main + 0x1943CC) == 0x33000001);
 }
 
+static bool g_skip_held; // (Select + Up was down last frame: the wait is skipped once per press)
+
+// Both shortcuts act only on a quest (the game's own check, main+3F8634: game modes 5, 6 and 8). Outside one there is
+// no quest to finish and no wait to skip, and the objects they write to belong to other scenes.
 static void update_field_shortcuts(void) {
     if (!g_main) return;
-    if (g_finish_quest && forge_input_isDown(BUTTON_PLUS) && forge_input_isDown(BUTTON_DOWN)) {
+    bool skip = g_skip_end_delay && forge_input_isDown(BUTTON_MINUS) && forge_input_isDown(BUTTON_UP);
+    bool skip_pressed = skip && !g_skip_held;
+    g_skip_held = skip;
+    bool finish = g_finish_quest && forge_input_isDown(BUTTON_PLUS) && forge_input_isDown(BUTTON_DOWN);
+    if ((!finish && !skip_pressed) || !camp_in_quest()) return;
+    if (finish) {
         u32 quest = *(const u32 *)(g_main + QUEST_OBJECT);
         if (quest) *(u8 *)(quest + QUEST_END_STATE) = 0x29;
     }
-    if (g_skip_end_delay && forge_input_isDown(BUTTON_MINUS) && forge_input_isDown(BUTTON_UP)) {
+    if (skip_pressed) {
+        // Once per press, not on every frame held: the scene can change under held buttons (the wait ends at once).
         u32 owner = *(const u32 *)(g_main + END_DELAY_OWNER);
-        if (!owner) return;
-        u32 delay = *(const u32 *)(owner + END_DELAY_OBJECT);
-        if (delay) *(u16 *)(delay + END_DELAY_FRAMES) = 0;
+        if (!owner || *(const u32 *)(owner + SCENE_DEPTH) <= END_DELAY_LEVEL) return;
+        u32 unit = *(const u32 *)(owner + SCENE_UNITS + 4 * END_DELAY_LEVEL);
+        if (!unit) return;
+        u16 *frames = (u16 *)(unit + END_DELAY_FRAMES);
+        // (its class logged for the record: a later version can check it instead of the quest and the depth)
+        forge_log(LOG_INFO, "personal-gathering: skip end delay: %u frames (scene depth %u, unit vtable main+%x)",
+                  *frames, *(const u32 *)(owner + SCENE_DEPTH), *(const u32 *)unit - g_main);
+        if (*frames) *frames = 0;
     }
 }
 

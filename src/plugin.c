@@ -780,7 +780,7 @@ static bool install_delivery_hooks(void) {
 #include "settings.inc"
 
 EXPORT void forge_onLoad(ForgePluginInfo *info) {
-    static const char name[] = "MHGU Recomp QoL 1.16";
+    static const char name[] = "MHGU Recomp QoL 1.16.1";
     if (!info) return;
     // Forge checks these fields against the loader version before initialization.
     info->major = 1, info->minor = 5, info->patch = 1;
