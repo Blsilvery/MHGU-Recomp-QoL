@@ -20,7 +20,7 @@ static u32 box_menu_hook(u8 *menu) {
 }
 
 static u32 box_open_hook(u32 owner, u32 arg, u32 x, u32 y, u32 mode) {
-    if (g_box_hooked && forge_input_isDown(BUTTON_R) && box_allows_equipment())
+    if (g_box_hooked && forge_input_isDown(BUTTON_L) && box_allows_equipment())
         return ((u32 (*)(u32, u32, u32, u32))(g_main + OPEN_PALICO_BOX))(owner, arg, 0, 0);
     return ((u32 (*)(u32, u32, u32, u32, u32))g_box_open_hook.original)(owner, arg, x, y, mode);
 }
@@ -36,6 +36,6 @@ static void init_better_box(void) {
     bool open_ok = hook(&g_box_open_hook, OPEN_ITEM_BOX, box_open_hook);
     g_box_hooked = menu_ok && open_ok;
     forge_log(g_box_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
-              g_box_hooked ? "full village item box enabled; hold R and confirm for Palico equipment"
+              g_box_hooked ? "full village item box enabled; hold L and confirm for Palico equipment"
                            : "box hooks failed; original box menus retained");
 }

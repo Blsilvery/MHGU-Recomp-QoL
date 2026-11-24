@@ -4,9 +4,9 @@ A ready-to-install quality-of-life plugin for **Monster Hunter Generations Ultim
 
 The goal is to bring some of MHGU's dated, tedious systems closer to how newer games such as Monster Hunter: World and Monster Hunter Rise handle them, while staying careful with save data and multiplayer. Every feature can be turned off on its own.
 
-**Current release:** v1.17.0 · Menu Languages
+**Current release:** v1.17.1 · Sprint-Friendly Controls
 
-[Download the complete v1.17.0 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.0-menu-languages/MHGU_Recomp_QoL_v1.17.0_Menu_Languages.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
+[Download the complete v1.17.1 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.1-sprint-friendly-controls/MHGU_Recomp_QoL_v1.17.1_Sprint_Friendly_Controls.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
 
 > **Requires:** MHGU Recomp, game version 1.4.0.
 
@@ -26,7 +26,7 @@ To update, exit the game and repeat the same extract-and-merge steps. No separat
 ### Gathering and movement
 
 - **Gather without tools:** mine and catch bugs without carrying a pickaxe or bug net.
-- **Gather or carve in one action:** process the remaining uses at a gathering point in one interaction. To gather or carve only once, hold the controller's right shoulder button R and press A.
+- **Gather or carve in one action:** process the remaining uses at a gathering point in one interaction. An item already at its carry limit is lost, as when pressing A again in the base game.
 - **Adjust gathering speed:** 1.00×–4.00×; default 1.50×. 1.00× is the game's speed, shown as off.
 - **Adjust sprint before detection:** sprint speed is adjustable from 1.00×–2.00× (default 1.20×), and stamina cost from 0%–100% of normal (default 0%). 1.00× speed and 100% stamina cost are the game's own values, shown as off. These two settings apply only before a large monster detects the hunter.
 - Batch gathering stops when the item pouch is full. Pouch size, item limits, and special gathering rules are currently the same as in the base game.
@@ -42,12 +42,13 @@ If **Put transport items in the item pouch** is enabled, eligible carry items su
 
 ### Rewards, storage, and other options
 
-- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while R + A opens the Palico Board. During a quest, both A and R + A at the camp courier open the full item box.
+- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while L + A (hold the left shoulder button, then press A) opens the Palico Board. During a quest, the camp courier always opens the full item box.
 - **Send all rewards to the Item Box:** one switch adds a send-all entry to the quest reward and appraisal screens, the farm trade carts (all three at once), and the Meownster Hunters rewards. If the box is full, remaining items stay available; the mod does not sell or discard them.
 - Ignore ambient heat and cold, so hot and cool drinks are not required.
 - Keep Palico enthusiasm at 99.
 - Set item-combination success to 100%.
-- Keep the map and large-monster markers visible, and equip three Hunter Arts with any hunting style.
+- Keep the map and large-monster markers visible.
+- Optionally equip three Hunter Arts with any hunting style. This changes the game's balance, so it is off by default; turn it on under **Hunting**.
 - Optional quest shortcuts: **Start (+) + Down** completes the current quest; **Select (-) + Up** skips the quest-end wait. These shortcuts can be disabled in Forge.
 
 ## Languages
@@ -69,7 +70,7 @@ Automatic delivery and manual item-pouch delivery are separate options. You can 
 
 Your settings are saved automatically. A moment after you change a switch or slider, the plugin writes them to `mhgu_recomp_qol.ini` in the MHGU Recomp game folder, next to `mhgurecomp.ini`. The next time the game starts, it loads them from that file. The last line of the panel shows whether the settings were loaded or saved. To restore the defaults, exit the game and delete `mhgu_recomp_qol.ini`. Your game save data is not touched.
 
-Settings from an earlier version are kept. Options that v1.17.0 merged into one (the hold-R, message, and reward switches, subquest delivery, and the speed switches) use the main option's saved value; their old lines are removed the next time the file is written. If something looks wrong after updating, delete the file to start from the defaults.
+Settings from an earlier version are kept. Options that v1.17.0 merged into one (the message and reward switches, subquest delivery, and the speed switches) use the main option's saved value; their old lines are removed the next time the file is written. If something looks wrong after updating, delete the file to start from the defaults.
 
 ## Compatibility
 
@@ -77,8 +78,7 @@ The plugin works alongside other Forge plugins that hook the same game functions
 
 ## Controls
 
-- **Gather one at a time:** hold the controller's right shoulder button R and press A when interacting with a gathering point. This temporarily performs one gather or carve instead of the full batch. R means the controller button, not the keyboard letter.
-- **Open the Palico Board:** before a quest, use R + A at the village or hub item box. Use A there to open the full item box. At the camp courier during a quest, A or R + A opens the full item box.
+- **Open the Palico Board:** before a quest, hold the controller's left shoulder button L and press A at the village or hub item box (keyboard: Q + A by default). Use A alone to open the full item box. At the camp courier during a quest, A opens the full item box.
 - **Deliver items manually:** open the item pouch during a quest. Press controller Y to deliver all eligible items at once, or select one item and press A to deliver it individually. Enable **Deliver from the Item Pouch anywhere** in Forge; it is separate from automatic delivery.
 - **Deliver a transport item:** automatic delivery skips transport items. If a transport item is in your item pouch, use the manual delivery controls above when you want to turn it in. The game's normal delivery eligibility rules still apply.
 

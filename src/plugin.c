@@ -206,9 +206,7 @@
 #define BOX_LINES 6               // the lines a notification box takes
 #define MAX_LEFT 16               // the items waiting for the replace window
 #define PROMPT_TRIES 600          // frames without a replace window before the waiting items are dropped (about 10 s)
-#define BUTTON_R 7                // (forge_input_isDown)
-#define SINGLE_FRAMES 60          // R held this many frames ago or less: a single gather (the gather comes partway into
-                                  // the gathering motion, so R can be let go by then)
+#define BUTTON_L 6                // (forge_input_isDown; not R, the sprint button: hunters sprint up to the box)
 #define PROMPT_PENDING 8          // (PROMPT_ITEM - 8: an item waits for the window)
 #define MAX_SOUNDS 4              // the most distinct sounds remembered during one Send all
 
@@ -301,9 +299,8 @@ void *memset(void *d, int c, u32 n) { u8 *p = d; while (n--) *p++ = (u8)c; retur
 //   - before an item carried in the hands (eggs, powderstone...): that gather isn't used, so the next press gathers
 //     it as usual; likewise when the hunter is already carrying something;
 //   - when the spot runs out or breaks early (sPop's own count and early-break roll).
-// Holding R as the gathering starts gathers a single item, as the game does (for a spot whose items can only be carried
-// one at a time, such as Khezu Welps, where gathering at once would use up every chance): forge_onUpdate notes the
-// last frame R was down.
+// There is no single-gather button any more: it was R, the sprint button, so sprinting to a spot gathered only one.
+// An item at its limit is lost, as when pressing A again in the game.
 //
 // A full pouch doesn't stop it: every gather is rolled, the pouch takes what it can (an item it holds already stacks),
 // an item at its limit is lost as in the game ("can't carry any more"), and an item with no free slot waits. The game
@@ -493,11 +490,8 @@ static const char *gather_rest(u32 hunter, u32 notify, u32 *extra) {
     return "limit";
 }
 
-static u32 g_since_r = SINGLE_FRAMES + 1; // frames since R was last down
-
 static u32 gather_hook(u32 hunter, u32 empty_if_none, u32 notify) {
-    bool single = g_since_r <= SINGLE_FRAMES;
-    bool on = g_gather_all && !single && hunter && FN(Is, IS_LOCAL)(hunter) == 1;
+    bool on = g_gather_all && hunter && FN(Is, IS_LOCAL)(hunter) == 1;
     g_add_result = ADD_NONE;
     hold_messages(on);
     g_spot = on && g_roll_all;
@@ -813,7 +807,7 @@ static bool install_delivery_hooks(void) {
 #include "settings.inc"
 
 EXPORT void forge_onLoad(ForgePluginInfo *info) {
-    static const char name[] = "MHGU Recomp QoL 1.17.0";
+    static const char name[] = "MHGU Recomp QoL 1.17.1";
     if (!info) return;
     // Forge checks these fields against the loader version before initialization.
     info->major = 1, info->minor = 5, info->patch = 1;
@@ -937,7 +931,6 @@ EXPORT void forge_onUpdate(float dt) {
     update_camp_box();
     update_sprint_stamina();
     update_auto_delivery();
-    g_since_r = forge_input_isDown(BUTTON_R) ? 0 : g_since_r + (g_since_r <= SINGLE_FRAMES);
     mood_update();
     update_field_shortcuts();
     settings_update();

@@ -34,7 +34,7 @@ extern void qol_boss_check(void);
 
 static ForgeHook g_map_hook, g_boss_hook, g_art_slots_hook, g_carry_items_hook;
 static bool g_map_hooked, g_boss_hooked, g_art_slots_hooked, g_carry_items_hooked;
-static bool g_three_arts = true, g_carry_items = true;
+static bool g_three_arts = false, g_carry_items = true; // (three Hunter Arts change the balance: off by default)
 static bool g_finish_quest = true, g_skip_end_delay = true;
 
 static u32 art_slots_hook(u32 player, u32 style) {
