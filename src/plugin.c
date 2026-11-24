@@ -264,12 +264,16 @@ static ForgeHook g_section_hook, g_rows_hook, g_looks_hook, g_reward_update_hook
 static ForgeHook g_appraisal_hook, g_appraisal_help_hook;
 // Other reward-context helpers are retained from upstream but are not initialized here.
 static ForgeHook g_monnyan_init_hook, g_monnyan_hook, g_gh_hook, g_trade_hook, g_trade_menu_hook;
-static bool g_rewards_hooked, g_send_all = true;
-static bool g_trade_hooked, g_trade_all = true;
-static bool g_monnyan_hooked, g_monnyan_all = true;
+// One switch sends all on the quest reward and appraisal, farm trade cart and Meownster Hunters menus; each keeps its
+// own hooks, and works when they did
+static bool g_rewards_hooked, g_trade_hooked, g_monnyan_hooked;
+static bool g_send_all = true, g_send_all_ready; // (ready: one of the three hooked)
+static bool send_rewards(void) { return g_send_all && g_rewards_hooked; }
+static bool send_trade(void) { return g_send_all && g_trade_hooked; }
+static bool send_monnyan(void) { return g_send_all && g_monnyan_hooked; }
 
 // The switches in Forge's menu
-static bool g_gather_all = true, g_merge = true, g_one_box = true, g_roll_all = false, g_hold_single = true;
+static bool g_gather_all = true, g_roll_all = false;
 
 
 // The compiler may emit memset calls; there is no C library to provide one
@@ -341,7 +345,7 @@ static u32 message_hook(u32 kind, u32 id, u32 item, u32 quantity, u32 extra) {
             if (g_queue[i].kind == kind && g_queue[i].id == id && g_queue[i].item == item &&
                 g_queue[i].quantity == quantity)
                 return 0;
-    if (g_merge && kind == 0 && id == MSG_OBTAINED) {
+    if (kind == 0 && id == MSG_OBTAINED) {
         for (u32 i = 0; i < g_queued; i++) {
             if (g_queue[i].kind == 0 && g_queue[i].id == MSG_OBTAINED && g_queue[i].item == item) {
                 u32 sum = g_queue[i].quantity + quantity;
@@ -358,13 +362,13 @@ static u32 message_hook(u32 kind, u32 id, u32 item, u32 quantity, u32 extra) {
 }
 
 static void hold_messages(bool on) {
-    g_holding = on && (g_merge || g_one_box) && g_message_hook.original;
+    g_holding = on && g_message_hook.original;
     g_queued = 0;
 }
 
 static void post_messages(void) {
     g_holding = false;
-    bool boxed = g_one_box && g_queued > 1;
+    bool boxed = g_queued > 1;
     for (u32 i = 0; i < g_queued; i++) {
         if (boxed && i % BOX_LINES == 0) {
             if (i) FN(Query, MSG_END)();
@@ -492,7 +496,7 @@ static const char *gather_rest(u32 hunter, u32 notify, u32 *extra) {
 static u32 g_since_r = SINGLE_FRAMES + 1; // frames since R was last down
 
 static u32 gather_hook(u32 hunter, u32 empty_if_none, u32 notify) {
-    bool single = g_hold_single && g_since_r <= SINGLE_FRAMES;
+    bool single = g_since_r <= SINGLE_FRAMES;
     bool on = g_gather_all && !single && hunter && FN(Is, IS_LOCAL)(hunter) == 1;
     g_add_result = ADD_NONE;
     hold_messages(on);
@@ -545,6 +549,7 @@ static u32 clear_account_hook(void) {
     return result;
 }
 
+#include "lang.inc"
 #include "rewards.inc"
 
 // ================================================================== Ambient temperature
@@ -808,7 +813,7 @@ static bool install_delivery_hooks(void) {
 #include "settings.inc"
 
 EXPORT void forge_onLoad(ForgePluginInfo *info) {
-    static const char name[] = "MHGU Recomp QoL 1.16.2";
+    static const char name[] = "MHGU Recomp QoL 1.17.0";
     if (!info) return;
     // Forge checks these fields against the loader version before initialization.
     info->major = 1, info->minor = 5, info->patch = 1;
@@ -866,25 +871,25 @@ EXPORT void forge_onInit(void) {
                         hook(&g_appraisal_hook, APPRAISAL_UPDATE, appraisal_hook);
     g_rewards_hooked = rows_ok && looks_ok && update_ok && sound_ok && appraisal_ok &&
                        hook(&g_section_hook, RESULT_SECTION, section_hook);
-    if (!g_rewards_hooked) g_send_all = false;
     forge_log(g_rewards_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_rewards_hooked ? "quest reward send-all enabled; Chinese menu row; stop on full box"
                                : "reward hooks FAILED; original reward menu retained");
     bool trade_menu_ok = trade && hook(&g_trade_menu_hook, TRADE_MENU_DRAW, trade_menu_hook);
     bool trade_claim_ok = trade && hook(&g_trade_hook, TRADE_CLAIM, trade_hook);
     g_trade_hooked = trade_menu_ok && trade_claim_ok;
-    if (!g_trade_hooked) g_trade_all = false;
     forge_log(g_trade_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_trade_hooked ? "farm trade send-all enabled; all three carts; preserve items on full box"
                              : "trade hooks FAILED; original farm claim menu retained");
     bool monnyan_init_ok = monnyan && hook(&g_monnyan_init_hook, MONNYAN_INIT, monnyan_init_hook);
     bool monnyan_update_ok = monnyan && hook(&g_monnyan_hook, MONNYAN_UPDATE, monnyan_hook);
     g_monnyan_hooked = rows_ok && looks_ok && update_ok && sound_ok && monnyan_init_ok && monnyan_update_ok;
-    if (!g_monnyan_hooked) g_monnyan_all = false;
     forge_log(g_monnyan_hooked ? LOG_INFO : LOG_ERROR, "personal-gathering: %s",
               g_monnyan_hooked ? "Meownster Hunters send-all enabled; retain rewards on full box"
                                : "Meownster Hunters hooks FAILED; original menu retained");
-    forge_log(LOG_INFO, "personal-gathering: send-all labels follow game language (eng/fre/spa/ger/ita/chT/chS)");
+    g_send_all_ready = g_rewards_hooked || g_trade_hooked || g_monnyan_hooked;
+    if (!g_send_all_ready) g_send_all = false;
+    forge_log(LOG_INFO, "personal-gathering: text language %s (auto: the game's eng/fre/spa/ger/ita/chT/chS, "
+              "kor when its text is Korean)", LANGUAGE_KEYS[g_language < CHOICE_COUNT ? g_language : CHOICE_AUTO]);
     bool heat_ok = climate && hook(&g_heat_hook, HEAT_STATE, heat_state_hook);
     bool cold_ok = climate && hook(&g_cold_hook, COLD_STATE, cold_state_hook);
     g_climate_hooked = heat_ok && cold_ok;
@@ -942,36 +947,82 @@ EXPORT void forge_onImGuiInit(void *ctx, void *alloc, void *freefn) {
     if (!ctx || !alloc || !freefn) return;
     igSetCurrentContext(ctx);
     igSetAllocatorFunctions(alloc, freefn, NULL);
+    load_hant_font();
+}
+
+// ------------------------------------------------------------------ the Forge menu
+//
+// The language list, then the options in groups: gathering, items and rewards, quests and delivery, hunting. An option
+// whose hooks failed shows its name with "unavailable" (log.txt says why). A speed slider at x1, or the stamina use
+// at 100%, changes nothing and shows "off".
+
+static void render_unavailable(u32 id) {
+    static char line[256];
+    u32 at = text_append(line, 0, sizeof line, tr(id));
+    text_append(line, at, sizeof line, tr(T_UNAVAILABLE));
+    igTextUnformatted(line, NULL);
+}
+
+static void render_switch(u32 id, bool *on, bool available) {
+    if (available) igCheckbox(tr(id), on);
+    else render_unavailable(id);
+}
+
+static void render_slider(u32 id, float *v, float min, float max, const char *format, float off, bool available) {
+    if (!available) {
+        render_unavailable(id);
+        return;
+    }
+    static char shown[64];
+    if (*v == off) text_append(shown, text_append(shown, 0, sizeof shown, format), sizeof shown, tr(T_OFF));
+    igSliderFloat(tr(id), v, min, max, *v == off ? shown : format, 0);
+}
+
+static void render_menu(void) {
+    if (!igTreeNode_Str(tr(T_TITLE))) return;
+    render_language();
+    if (igTreeNode_Str(tr(T_GATHERING))) {
+        render_switch(T_TOOLLESS, &g_toolless, g_toolless_hooked);
+        render_switch(T_GATHER_ALL, &g_gather_all, g_gather_hooked);
+        render_slider(T_GATHERING_SPEED, &g_gathering_speed, 1.0f, 4.0f, "x%.2f", 1.0f, g_motion_rate_hooked);
+        if (g_gather_hooked) igTextUnformatted(tr(T_FULL_POUCH), NULL);
+        igTreePop();
+    }
+    if (igTreeNode_Str(tr(T_ITEMS))) {
+        render_switch(T_SEND_ALL, &g_send_all, g_send_all_ready);
+        if (g_send_all_ready && !(g_rewards_hooked && g_trade_hooked && g_monnyan_hooked))
+            igTextUnformatted(tr(T_PARTLY), NULL);
+        render_switch(T_CARRY_ITEMS, &g_carry_items, g_carry_items_hooked);
+        render_switch(T_COMBINE, &g_combine_always, g_combine_hooked);
+        igTreePop();
+    }
+    if (igTreeNode_Str(tr(T_QUEST))) {
+        render_switch(T_AUTO_GOALS, &g_auto_deliver_goals, g_auto_delivery_ready);
+        render_switch(T_AUTO_ACCOUNT, &g_auto_deliver_account, g_auto_delivery_ready);
+        render_switch(T_DELIVER_ANYWHERE, &g_deliver_anywhere, g_delivery_hooked);
+        render_switch(T_FINISH_QUEST, &g_finish_quest, g_main != 0);
+        render_switch(T_SKIP_DELAY, &g_skip_end_delay, g_main != 0);
+        igTreePop();
+    }
+    if (igTreeNode_Str(tr(T_HUNTING))) {
+        render_switch(T_NO_EXTREME, &g_no_extreme, g_climate_hooked);
+        render_switch(T_AUTO_MAP, &qol_field_routes.map_enabled, g_map_hooked);
+        render_switch(T_MARK_LARGE, &qol_field_routes.boss_enabled, g_boss_hooked);
+        render_switch(T_THREE_ARTS, &g_three_arts, g_art_slots_hooked);
+        render_slider(T_SPRINT_SPEED, &g_sprint_speed, 1.0f, 2.0f, "x%.2f", 1.0f, g_motion_rate_hooked);
+        render_slider(T_STAMINA_USE, &g_sprint_stamina_percent, 0.0f, 100.0f, "%.0f%%", 100.0f,
+                      g_sprint_stamina_ready);
+        render_switch(T_MAX_MOOD, &g_max_mood, g_mood_hooked);
+        igTreePop();
+    }
+    render_settings_status();
+    igTreePop();
 }
 
 EXPORT void forge_onImGuiRender(void) {
-    if (!igTreeNode_Str("MHGU Recomp QoL###mhgu-recomp-qol")) return;
-    if (g_toolless_hooked) igCheckbox("No pickaxe or bug net required", &g_toolless);
-    else igTextUnformatted("Tool hooks unavailable: check log.txt.", NULL);
-    if (g_gather_hooked) {
-        igCheckbox("One action gathers/carves the whole spot", &g_gather_all);
-        igCheckbox("Hold controller R for a single gather", &g_hold_single);
-        igCheckbox("Merge repeated item messages", &g_merge);
-        igCheckbox("One notification per spot", &g_one_box);
-    } else igTextUnformatted("Batch hooks unavailable: check log.txt.", NULL);
-    if (g_delivery_hooked) igCheckbox("Deliver from the Item Pouch anywhere", &g_deliver_anywhere);
-    else igTextUnformatted("Delivery hooks unavailable: check log.txt.", NULL);
-    if (g_rewards_hooked) igCheckbox("Send all on quest reward and appraisal screens", &g_send_all);
-    else igTextUnformatted("Reward hooks unavailable: check log.txt.", NULL);
-    if (g_trade_hooked) igCheckbox("Send all farm trade cart items to Item Box", &g_trade_all);
-    else igTextUnformatted("Farm trade hooks unavailable: check log.txt.", NULL);
-    if (g_monnyan_hooked) igCheckbox("Send all Meownster Hunters rewards to Item Box", &g_monnyan_all);
-    else igTextUnformatted("Meownster Hunters hooks unavailable: check log.txt.", NULL);
-    if (g_climate_hooked) igCheckbox("No hot/cool drinks required (ambient temperature)", &g_no_extreme);
-    else igTextUnformatted("Temperature hooks unavailable: check log.txt.", NULL);
-    if (g_mood_hooked) igCheckbox("Keep Palico enthusiasm at maximum (99)", &g_max_mood);
-    else igTextUnformatted("Palico mood hooks unavailable: check log.txt.", NULL);
-    if (g_combine_hooked) igCheckbox("Always succeed at item combinations (100%)", &g_combine_always);
-    else igTextUnformatted("Combination rate hook unavailable: check log.txt.", NULL);
-    render_auto_delivery();
-    render_movement_options();
-    render_field_options();
-    igTextUnformatted("Stops on a full pouch. Eggs and living monsters keep their rules.", NULL);
-    render_settings_status();
-    igTreePop();
+    g_menu_language = text_language();
+    if (g_menu_language == LANG_CHT && !g_hant_font) g_menu_language = LANG_CHS; // (no Traditional font: lang.inc)
+    if (g_menu_language == LANG_CHT) igPushFont(g_hant_font, 0.0f);
+    render_menu();
+    if (g_menu_language == LANG_CHT) igPopFont();
 }

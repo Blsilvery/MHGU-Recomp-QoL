@@ -108,16 +108,3 @@ static void update_field_shortcuts(void) {
         if (*frames) *frames = 0;
     }
 }
-
-static void render_field_options(void) {
-    if (!g_main || !igTreeNode_Str("Map, Hunter Arts and quest shortcuts")) return;
-    if (g_map_hooked) igCheckbox("Automatically display map", &qol_field_routes.map_enabled);
-    if (g_boss_hooked) igCheckbox("Mark large monsters", &qol_field_routes.boss_enabled);
-    if (g_art_slots_hooked) igCheckbox("Three Hunter Arts for all styles", &g_three_arts);
-    if (g_carry_items_hooked) igCheckbox("Put transport items in the item pouch", &g_carry_items);
-    if (!g_map_hooked || !g_boss_hooked || !g_art_slots_hooked || !g_carry_items_hooked)
-        igTextUnformatted("Some options are unavailable. Check log.txt for overlapping cheats or mods.", NULL);
-    igCheckbox("Finish quest immediately (Start + D-pad Down)", &g_finish_quest);
-    igCheckbox("Skip end-of-quest delay (Select + D-pad Up)", &g_skip_end_delay);
-    igTreePop();
-}

@@ -33,6 +33,7 @@ extern u32 forge_input_isDown(u32 button); // (nn::hid NpadButton bits: A 0, B 1
 extern u32 forge_mem_getMainTextAddr(void);
 extern u32 forge_singleton_getInstanceByName(const char *name);
 extern void forge_log(int level, const char *fmt, ...);
+extern const char *forge_fs_getRomFsMountPoint(void); // ("app": the mods' romfs is <it>:/nativeNX/...)
 
 // cimgui, as far as this plugin needs it.
 extern void igSetCurrentContext(void *ctx);
@@ -41,6 +42,19 @@ extern bool igTreeNode_Str(const char *label);
 extern void igTreePop(void);
 extern void igTextUnformatted(const char *text, const char *text_end);
 extern bool igCheckbox(const char *label, bool *v);
+extern bool igCombo_Str(const char *label, int *current_item, const char *items_separated_by_zeros,
+                        int popup_max_height_in_items);
 // Forge's ImGui bridge reads float arguments from the base AAPCS registers.
 extern bool igSliderFloat(const char *label, float *v, float min, float max,
                           const char *format, int flags) __attribute__((pcs("aapcs")));
+// Fonts (ImGui 1.92, as the bridge hands them to 32-bit plugins: ImGuiIO's Fonts at +2C, ImFontConfig's Flags at +6C)
+#define IMGUI_IO_FONTS 0x2C
+#define IMFONTCONFIG_FLAGS 0x6C
+#define IMFONTFLAGS_NOLOADERROR 2 // (a file that doesn't load gives NULL, not an assertion)
+extern u8 *igGetIO_Nil(void);
+extern u8 *ImFontConfig_ImFontConfig(void);
+extern void ImFontConfig_destroy(void *config);
+extern void *ImFontAtlas_AddFontFromFileTTF(void *atlas, const char *filename, float size_pixels, const void *config,
+                                            const u16 *glyph_ranges) __attribute__((pcs("aapcs")));
+extern void igPushFont(void *font, float font_size_base_unscaled) __attribute__((pcs("aapcs"))); // (0: the size kept)
+extern void igPopFont(void);

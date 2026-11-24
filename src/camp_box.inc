@@ -103,22 +103,68 @@ static bool camp_load_archive(void *resources, u32 locale) {
     return g_camp.archive != NULL;
 }
 
+// The village message banks in common_<lang>.arc, by the index the village text functions use (0 is the resident
+// bank). The village archive is loaded first (camp_load_archive), so these are the archive's own entries: with a
+// translation patch that replaces the archive (the Korean patch replaces common_eng.arc), its text.
+static const char *const g_camp_tables[CAMP_MESSAGE_COUNT] = {
+    NULL, "GUI\\06_msg\\QuestCounter", "table\\LobbyMsg", "table\\LobbyMenuMsg", "table\\LbHelp",
+    "table\\OtBoardMsg", "table\\GuildCardMsg", "table\\GC_Title_1", "table\\GC_Title_2", "table\\GC_Medal",
+    "table\\GC_background", "table\\GuestHunterMsg", "table\\guestQuestData", "table\\EqShop",
+    "table\\LbShop_EqMakeMsg", "table\\ItemShop", "table\\LbShop_Eq_EqMakeMsg", "table\\LbShop_OtEqMsg",
+    "table\\LbShop_OtEmployMsg", "table\\Kitchen", "table\\Lb_AirshipMsg", "table\\Lb_PostMsg",
+    "table\\Lb_ItemBoxMsg", "table\\Lb_ArenaCounterMsg", "table\\Lb_MonnyanMsg", "table\\Lb_OtDoujoMsg",
+    "table\\Lb_TradeShopMsg", "table\\Room_s", "table\\Lb_GalleryMsg", "table\\Lb_PetMsg",
+    "table\\Lb_MakaRenkinMsg", "table\\Lb_HeroBlade", "table\\Lb_CaveMsg", "table\\Lb_AshiyuMsg",
+    "table\\Lb_RyurekiinMsg", "table\\Lb_KarisutaMsg", "table\\CharMakeMsg", "table\\Lb_LaboratoryMsg",
+    "table\\researchReinforce", "GUI\\06_msg\\NetworkVillage", "table\\KeyboardMsg", "table\\ResultMsg",
+};
+
+static void *camp_load_message(void *resources, void *type, const char *path) {
+    void *message = camp_resource_loader(resources)(resources, type, path, 3);
+    if (message && !*(u32 *)((u8 *)message + 0x88)) { // (no strings: not there)
+        FN(void (*)(void *), CAMP_RELEASE_RESOURCE)(message);
+        message = NULL;
+    }
+    return message;
+}
+
+// "<lang>\<table>_<lang>", the bank's path inside the village archive
+static void camp_table_path(char *path, u32 size, u32 locale, u32 index) {
+    const char *lang = g_camp_languages[locale], *table = g_camp_tables[index];
+    u32 at = 0;
+    for (u32 i = 0; i < 3 && at + 1 < size; i++) path[at++] = lang[i];
+    if (at + 1 < size) path[at++] = '\\';
+    while (*table && at + 1 < size) path[at++] = *table++;
+    if (at + 1 < size) path[at++] = '_';
+    for (u32 i = 0; i < 3 && at + 1 < size; i++) path[at++] = lang[i];
+    path[at] = 0;
+}
+
+// Each bank from the village archive the game loaded, so a translation patch's text shows. The mod's copies of the
+// original banks (wheelpl\qolcamp, from tools/make_arcs.py) are kept for a bank the archive doesn't give.
 static bool camp_load_messages(void *resources, u32 locale) {
     if (!g_camp.texts_loaded) {
         void *type = FN(void *(*)(void), CAMP_GMD_TYPE)();
-        CampLoadResource load = camp_resource_loader(resources);
-        char path[] = "wheelpl\\qolcamp\\eng_00";
-        for (u32 i = 0; i < 3; i++) path[sizeof(path) - 7 + i] = g_camp_languages[locale][i];
+        char copy[] = "wheelpl\\qolcamp\\eng_00";
+        for (u32 i = 0; i < 3; i++) copy[sizeof(copy) - 7 + i] = g_camp_languages[locale][i];
+        u32 native = 0, copies = 0;
         for (u32 i = 1; i < CAMP_MESSAGE_COUNT; i++) {
-            path[sizeof(path) - 3] = '0' + i / 10;
-            path[sizeof(path) - 2] = '0' + i % 10;
-            void *message = load(resources, type, path, 3);
-            if (message && !*(u32 *)((u8 *)message + 0x88)) {
-                FN(void (*)(void *), CAMP_RELEASE_RESOURCE)(message);
-                message = NULL;
+            char path[64];
+            camp_table_path(path, sizeof path, locale, i);
+            void *message = camp_load_message(resources, type, path);
+            if (message) {
+                native++;
+            } else {
+                copy[sizeof(copy) - 3] = '0' + i / 10;
+                copy[sizeof(copy) - 2] = '0' + i % 10;
+                message = camp_load_message(resources, type, copy);
+                if (message) copies++;
             }
             g_camp.messages[i] = message;
         }
+        forge_log(LOG_INFO, "personal-gathering: camp texts (%s): %u from the village archive, %u from the mod's copies",
+                  g_camp_languages[locale], native, copies);
+        if (g_camp.messages[22]) note_game_text(FN(const char *(*)(void *, u32), CAMP_GMD_STRING)(g_camp.messages[22], 0));
         g_camp.texts_loaded = true;
     }
     return g_camp.messages[22] && g_camp.messages[2] &&
@@ -136,11 +182,13 @@ static const char *camp_fallback_text(u32 category, u32 index) {
 
 static const char *camp_village_text(void *owner, u32 category, u32 index) {
     const char *text = ORIGINAL(CampVillageText, g_camp_village_text_hook)(owner, category, index);
+    if (text) note_game_text(text);
     return text ? text : camp_fallback_text(category, index);
 }
 
 static const char *camp_bank_text(void *owner, u32 bank, u32 category, u32 index) {
     const char *text = ORIGINAL(CampBankText, g_camp_bank_text_hook)(owner, bank, category, index);
+    if (text) note_game_text(text);
     if (text) return text;
     if (bank == 1) return camp_fallback_text(category, index);
     // The native item-box preview uses the character creation text.

@@ -47,7 +47,7 @@ typedef s32 (*DeliveryAction)(u32 progress, u32 value, s32 quantity);
 typedef const DeliveryPouchSlot *(*DeliveryGetSlot)(u32 pouch, u32 slot, u32 flags);
 
 static bool g_auto_delivery_ready;
-static bool g_auto_deliver_goals = true, g_auto_deliver_sub = true;
+static bool g_auto_deliver_goals = true; // (the main quest's and the subquest's)
 static bool g_auto_deliver_account = true;
 static u32 g_auto_delivery_delay;
 
@@ -65,8 +65,7 @@ static bool auto_delivery_matches_goal(const DeliveryGoal *goals, u32 item) {
 }
 
 static bool auto_deliver_goal_items(u32 progress, u32 pouch, const DeliveryGoal *goals) {
-    u32 goal_count = g_auto_deliver_sub ? QUEST_DELIVERY_GOAL_COUNT : QUEST_DELIVERY_GOAL_COUNT - 1;
-    for (u32 i = 0; i < goal_count; ++i) {
+    for (u32 i = 0; i < QUEST_DELIVERY_GOAL_COUNT; ++i) {
         const DeliveryGoal *goal = &goals[i];
         u32 item = goal->item;
         if ((goal->flags & (GOAL_DELIVERY_STATUS_MASK | GOAL_SPECIAL_DELIVERY)) != GOAL_ITEM_DELIVERY ||
@@ -148,14 +147,4 @@ static void init_auto_delivery(void) {
     }
     g_auto_delivery_ready = true;
     forge_log(LOG_INFO, "personal-gathering: automatic delivery ready for partial quest goals and account items");
-}
-
-static void render_auto_delivery(void) {
-    if (!g_main || !igTreeNode_Str("Automatic quest delivery")) return;
-    if (g_auto_delivery_ready) {
-        igCheckbox("Automatically deliver quest goal items", &g_auto_deliver_goals);
-        igCheckbox("Include subquest delivery goals", &g_auto_deliver_sub);
-        igCheckbox("Automatically settle other account items", &g_auto_deliver_account);
-    } else igTextUnformatted("Automatic delivery is unavailable. Check log.txt.", NULL);
-    igTreePop();
 }

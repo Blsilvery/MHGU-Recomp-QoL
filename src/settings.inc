@@ -17,7 +17,6 @@ extern u64 igImFileGetSize(u32 file);
 extern u64 igImFileRead(void *data, u64 size, u64 count, u32 file);
 extern u64 igImFileWrite(const void *data, u64 size, u64 count, u32 file);
 
-#define SETTINGS_FILE "mhgu_recomp_qol.ini"
 #define SETTINGS_SECTION "[MHGU Recomp QoL]"
 #define SETTINGS_MAX_FILE 4096
 #define SETTINGS_SAVE_DELAY 30    // frames without a change before it is written (about half a second)
@@ -29,37 +28,36 @@ typedef struct {
     float *value;          // ...or a slider, within min..max
     float min, max;
     const bool *available; // its feature's hooks (NULL: always available)
+    u32 *choice;           // ...or one of a list, saved by name (names[*choice])
+    const char *const *names;
+    u32 count;
 } Setting;
+#define NO_CHOICE NULL, NULL, 0 // (a switch or a slider)
 
-// In the menu's order. A new setting goes at the end of its group; keys are never renamed (old files keep working).
+// In the menu's order. Keys are never renamed: an option merged into another keeps the other's key, and the keys of
+// the options merged away (hold_r_single_gather, merge_item_messages, one_notification_per_spot, send_all_trade_cart,
+// send_all_meownster_hunters, auto_deliver_subquests, faster_gathering, faster_sprint, reduce_sprint_stamina) are
+// skipped in an old file and left out when it is next written.
 static const Setting g_settings[] = {
-    {"no_pickaxe_or_bug_net", &g_toolless, NULL, 0, 0, &g_toolless_hooked},
-    {"gather_whole_spot", &g_gather_all, NULL, 0, 0, &g_gather_hooked},
-    {"hold_r_single_gather", &g_hold_single, NULL, 0, 0, &g_gather_hooked},
-    {"merge_item_messages", &g_merge, NULL, 0, 0, &g_gather_hooked},
-    {"one_notification_per_spot", &g_one_box, NULL, 0, 0, &g_gather_hooked},
-    {"deliver_anywhere", &g_deliver_anywhere, NULL, 0, 0, &g_delivery_hooked},
-    {"send_all_rewards", &g_send_all, NULL, 0, 0, &g_rewards_hooked},
-    {"send_all_trade_cart", &g_trade_all, NULL, 0, 0, &g_trade_hooked},
-    {"send_all_meownster_hunters", &g_monnyan_all, NULL, 0, 0, &g_monnyan_hooked},
-    {"no_hot_cool_drinks", &g_no_extreme, NULL, 0, 0, &g_climate_hooked},
-    {"max_palico_enthusiasm", &g_max_mood, NULL, 0, 0, &g_mood_hooked},
-    {"always_combine", &g_combine_always, NULL, 0, 0, &g_combine_hooked},
-    {"auto_deliver_goals", &g_auto_deliver_goals, NULL, 0, 0, &g_auto_delivery_ready},
-    {"auto_deliver_subquests", &g_auto_deliver_sub, NULL, 0, 0, &g_auto_delivery_ready},
-    {"auto_deliver_account_items", &g_auto_deliver_account, NULL, 0, 0, &g_auto_delivery_ready},
-    {"faster_gathering", &g_faster_gathering, NULL, 0, 0, &g_motion_rate_hooked},
-    {"gathering_speed", NULL, &g_gathering_speed, 1.0f, 4.0f, &g_motion_rate_hooked},
-    {"faster_sprint", &g_faster_sprint, NULL, 0, 0, &g_motion_rate_hooked},
-    {"sprint_speed", NULL, &g_sprint_speed, 1.0f, 2.0f, &g_motion_rate_hooked},
-    {"reduce_sprint_stamina", &g_reduce_sprint_stamina, NULL, 0, 0, &g_sprint_stamina_ready},
-    {"sprint_stamina_use_percent", NULL, &g_sprint_stamina_percent, 0.0f, 100.0f, &g_sprint_stamina_ready},
-    {"auto_display_map", &qol_field_routes.map_enabled, NULL, 0, 0, &g_map_hooked},
-    {"mark_large_monsters", &qol_field_routes.boss_enabled, NULL, 0, 0, &g_boss_hooked},
-    {"three_hunter_arts", &g_three_arts, NULL, 0, 0, &g_art_slots_hooked},
-    {"transport_items_in_pouch", &g_carry_items, NULL, 0, 0, &g_carry_items_hooked},
-    {"finish_quest_shortcut", &g_finish_quest, NULL, 0, 0, NULL},
-    {"skip_end_delay_shortcut", &g_skip_end_delay, NULL, 0, 0, NULL},
+    {"language", NULL, NULL, 0, 0, NULL, &g_language, LANGUAGE_KEYS, CHOICE_COUNT},
+    {"no_pickaxe_or_bug_net", &g_toolless, NULL, 0, 0, &g_toolless_hooked, NO_CHOICE},
+    {"gather_whole_spot", &g_gather_all, NULL, 0, 0, &g_gather_hooked, NO_CHOICE},
+    {"gathering_speed", NULL, &g_gathering_speed, 1.0f, 4.0f, &g_motion_rate_hooked, NO_CHOICE},
+    {"send_all_rewards", &g_send_all, NULL, 0, 0, &g_send_all_ready, NO_CHOICE},
+    {"transport_items_in_pouch", &g_carry_items, NULL, 0, 0, &g_carry_items_hooked, NO_CHOICE},
+    {"always_combine", &g_combine_always, NULL, 0, 0, &g_combine_hooked, NO_CHOICE},
+    {"auto_deliver_goals", &g_auto_deliver_goals, NULL, 0, 0, &g_auto_delivery_ready, NO_CHOICE},
+    {"auto_deliver_account_items", &g_auto_deliver_account, NULL, 0, 0, &g_auto_delivery_ready, NO_CHOICE},
+    {"deliver_anywhere", &g_deliver_anywhere, NULL, 0, 0, &g_delivery_hooked, NO_CHOICE},
+    {"finish_quest_shortcut", &g_finish_quest, NULL, 0, 0, NULL, NO_CHOICE},
+    {"skip_end_delay_shortcut", &g_skip_end_delay, NULL, 0, 0, NULL, NO_CHOICE},
+    {"no_hot_cool_drinks", &g_no_extreme, NULL, 0, 0, &g_climate_hooked, NO_CHOICE},
+    {"auto_display_map", &qol_field_routes.map_enabled, NULL, 0, 0, &g_map_hooked, NO_CHOICE},
+    {"mark_large_monsters", &qol_field_routes.boss_enabled, NULL, 0, 0, &g_boss_hooked, NO_CHOICE},
+    {"three_hunter_arts", &g_three_arts, NULL, 0, 0, &g_art_slots_hooked, NO_CHOICE},
+    {"sprint_speed", NULL, &g_sprint_speed, 1.0f, 2.0f, &g_motion_rate_hooked, NO_CHOICE},
+    {"sprint_stamina_use_percent", NULL, &g_sprint_stamina_percent, 0.0f, 100.0f, &g_sprint_stamina_ready, NO_CHOICE},
+    {"max_palico_enthusiasm", &g_max_mood, NULL, 0, 0, &g_mood_hooked, NO_CHOICE},
 };
 #define SETTING_COUNT (sizeof g_settings / sizeof *g_settings)
 
@@ -67,12 +65,20 @@ static float g_setting_saved[SETTING_COUNT]; // what the file holds (read, or la
 static float g_setting_seen[SETTING_COUNT];  // the values last frame (to wait for a slider to be let go)
 static bool g_settings_ready, g_settings_failed;
 static u32 g_settings_wait; // frames the changed values have stayed the same
-static const char *g_settings_status = "";
+static u32 g_settings_status = T_COUNT; // (a text of lang.inc; T_COUNT: none yet)
 
-static float setting_get(const Setting *s) { return s->flag ? (*s->flag ? 1.0f : 0.0f) : *s->value; }
+static float setting_get(const Setting *s) {
+    if (s->choice) return (float)*s->choice;
+    return s->flag ? (*s->flag ? 1.0f : 0.0f) : *s->value;
+}
 static bool setting_available(const Setting *s) { return !s->available || *s->available; }
 
 static void setting_set(const Setting *s, float v) {
+    if (s->choice) {
+        u32 i = v > 0.0f ? (u32)(v + 0.5f) : 0;
+        *s->choice = i < s->count ? i : 0;
+        return;
+    }
     if (s->flag) {
         *s->flag = v != 0.0f;
         return;
@@ -116,6 +122,16 @@ static bool text_value(const char *p, u32 n, float *out) {
     return true;
 }
 
+static bool text_same_nocase(const char *a, const char *b, u32 n) { // (as text_same, ASCII letters in either case)
+    for (u32 i = 0; i < n; i++) {
+        char x = a[i], y = b[i];
+        if (x >= 'A' && x <= 'Z') x += 'a' - 'A';
+        if (y >= 'A' && y <= 'Z') y += 'a' - 'A';
+        if (!a[i] || x != y) return false;
+    }
+    return !a[n];
+}
+
 static bool is_space(char c) { return c == ' ' || c == '\t' || c == '\r'; }
 
 // Applies every "key = value" line of the file it knows; others (comments, sections, old keys) are skipped
@@ -138,8 +154,11 @@ static u32 settings_parse(const char *text, u32 size) {
         while (b > v && is_space(text[b - 1])) b--;
         for (u32 i = 0; i < SETTING_COUNT; i++) {
             if (!text_same(g_settings[i].key, text + a, key_end - a)) continue;
-            float value;
-            if (text_value(text + v, b - v, &value)) {
+            float value = 0.0f;
+            bool named = false;
+            for (u32 k = 0; g_settings[i].names && k < g_settings[i].count && !named; k++)
+                if (text_same_nocase(g_settings[i].names[k], text + v, b - v)) value = (float)k, named = true;
+            if (named || (!g_settings[i].names && text_value(text + v, b - v, &value))) {
                 setting_set(&g_settings[i], value);
                 g_setting_saved[i] = setting_get(&g_settings[i]);
                 applied++;
@@ -155,8 +174,12 @@ static u32 text_put(char *out, u32 at, const char *s) {
     return at;
 }
 
-// A switch as 1 / 0; a slider with two decimals (every slider is 0 or more)
+// A switch as 1 / 0; a list by name; a slider with two decimals (every slider is 0 or more)
 static u32 text_put_value(char *out, u32 at, const Setting *s, float v) {
+    if (s->choice) {
+        u32 i = v > 0.0f ? (u32)(v + 0.5f) : 0;
+        return text_put(out, at, s->names[i < s->count ? i : 0]);
+    }
     if (s->flag) return text_put(out, at, v != 0.0f ? "1" : "0");
     if (!(v > 0.0f)) v = 0.0f;
     if (v > 1000000.0f) v = 1000000.0f;
@@ -180,7 +203,9 @@ static bool settings_write(void) {
     static char text[SETTINGS_MAX_FILE];
     float values[SETTING_COUNT];
     u32 at = text_put(text, 0, "; MHGU Recomp QoL settings. Written by the plugin when they change in the Forge menu (Insert).\n"
-                                "; Delete this file to go back to the defaults. Switches: 1 on, 0 off.\n");
+                                "; Delete this file to go back to the defaults. Switches: 1 on, 0 off.\n"
+                                "; Speeds: 1 is off. Stamina use: 100 is off.\n"
+                                "; language: auto (the game's; Korean when its text is Korean), eng, chS, chT or kor.\n");
     at = text_put(text, at, SETTINGS_SECTION "\n");
     for (u32 i = 0; i < SETTING_COUNT; i++) {
         const Setting *s = &g_settings[i];
@@ -215,7 +240,7 @@ static void settings_load(void) {
     for (u32 i = 0; i < SETTING_COUNT; i++) g_setting_saved[i] = setting_get(&g_settings[i]);
     u32 file = igImFileOpen(SETTINGS_FILE, "rb");
     if (!file) {
-        g_settings_status = "Settings: defaults (saved when changed)";
+        g_settings_status = T_SETTINGS_DEFAULTS;
         forge_log(LOG_INFO, "personal-gathering: no %s; default settings", SETTINGS_FILE);
         return;
     }
@@ -225,7 +250,7 @@ static void settings_load(void) {
     u32 got = want ? (u32)igImFileRead(text, 1, want, file) : 0;
     igImFileClose(file);
     u32 applied = settings_parse(text, got > want ? want : got);
-    g_settings_status = "Settings: loaded from " SETTINGS_FILE;
+    g_settings_status = T_SETTINGS_LOADED;
     forge_log(LOG_INFO, "personal-gathering: %u settings loaded from %s", applied, SETTINGS_FILE);
 }
 
@@ -254,9 +279,9 @@ static void settings_update(void) {
     if (++g_settings_wait < (g_settings_failed ? SETTINGS_RETRY_DELAY : SETTINGS_SAVE_DELAY)) return;
     g_settings_wait = 0;
     g_settings_failed = !settings_write();
-    g_settings_status = g_settings_failed ? "Settings: could not save (check log.txt)" : "Settings: saved to " SETTINGS_FILE;
+    g_settings_status = g_settings_failed ? T_SETTINGS_NOT_SAVED : T_SETTINGS_SAVED;
 }
 
 static void render_settings_status(void) {
-    if (g_settings_ready) igTextUnformatted(g_settings_status, NULL);
+    if (g_settings_ready && g_settings_status < T_COUNT) igTextUnformatted(tr(g_settings_status), NULL);
 }

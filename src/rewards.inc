@@ -29,22 +29,19 @@
 // Sending plays a sound per slot. The game's sound manager starts each one on its own voice, so several in one frame
 // add up to a louder sound: during a Send all, each sound plays only once.
 
-// Read the exact language field used by the game's localized archive loader
-// (main+153598 and main+2483B0): singleton at GOT 1838BB4, byte +A5.
-// These are MT Framework language IDs, not menu positions or console region IDs.
+// The row's text in the plugin's text language (lang.inc: the game's language, Korean with a Korean patch, or the
+// "language" setting). The menu's own Send row (entries: the menu's text list) tells a Korean patch's text apart.
 static const char *send_all_label(u32 entries, u32 row) {
-    (void)entries; (void)row;
-    u32 holder = g_main ? *(u32 *)(g_main + 0x1838BB4) : 0;
-    u32 system = holder ? *(u32 *)holder : 0;
-    u32 language = system ? *(u8 *)(system + 0xA5) : 1;
-    switch (language) {
-    case 2: return "Tout envoyer au coffre";  // fre
-    case 3: return "Enviar todo al baúl";     // spa
-    case 4: return "Alles in die Objektbox"; // ger
-    case 5: return "Invia tutto alla cassa"; // ita
-    case 7: return "全部入箱";               // chT
-    case 8: return "全部入箱";               // chS
-    default: return "Send all to Item Box & Exit"; // eng, or unsupported engine language
+    if (entries) note_game_text(FN(EntryText, ENTRY_TEXT)(entries + 12 * row));
+    switch (text_language()) {
+    case LANG_FRE: return "Tout envoyer au coffre";
+    case LANG_SPA: return "Enviar todo al baúl";
+    case LANG_GER: return "Alles in die Objektbox";
+    case LANG_ITA: return "Invia tutto alla cassa";
+    case LANG_CHT: return "全部入箱";
+    case LANG_CHS: return "全部入箱";
+    case LANG_KOR: return "전부 아이템 박스로 보내고 종료";
+    default: return "Send all to Item Box & Exit";
     }
 }
 static u32 g_menu_uio;     // the menu showing the added row (0: none)
@@ -178,7 +175,7 @@ static u32 appraisal_hook(u32 ui) {
     u8 *cursor = (u8 *)(ui + RESULT_CURSOR);
     u32 state = *(u32 *)(ui + RESULT_STATE);
     if (state == APPRAISAL_SELL) from_sell = true; // (until the menu is back; a new appraisal starts on row 0)
-    bool menu = g_send_all && uio && uio == g_menu_uio && g_menu_rows == 2 &&
+    bool menu = send_rewards() && uio && uio == g_menu_uio && g_menu_rows == 2 &&
                 state == APPRAISAL_MENU && (cursor[CURSOR_ROWS] == 2 || cursor[CURSOR_ROWS] == 3);
     if (!menu) {
         g_cursor_extended = false;
@@ -241,7 +238,7 @@ static u32 section_hook(u32 ui, u32 section) {
 
     u8 *cursor = (u8 *)(ui + RESULT_CURSOR);
     g_cursor_extended = false;
-    bool menu = g_send_all && g_menu_uio && *(u32 *)(ui + RESULT_STATE) == STATE_MENU && cursor[CURSOR_ROWS] == 3;
+    bool menu = send_rewards() && g_menu_uio && *(u32 *)(ui + RESULT_STATE) == STATE_MENU && cursor[CURSOR_ROWS] == 3;
     if (!menu) {
         g_on_send_all = false;
         return ORIGINAL(Section, g_section_hook)(ui, section);
@@ -336,7 +333,7 @@ static u32 monnyan_send_all(u32 list, bool *full) {
 static u32 monnyan_hook(u32 list) {
     u32 uio = *(u32 *)(list + MN_UIO);
     u8 *cursor = (u8 *)(list + MN_CURSOR);
-    bool menu = g_monnyan_all && uio && uio == g_monnyan_uio && uio == g_menu_uio &&
+    bool menu = send_monnyan() && uio && uio == g_monnyan_uio && uio == g_menu_uio &&
                 *(u32 *)(list + MN_STATE) == MN_MENU && cursor[CURSOR_ROWS] == 3;
     if (!menu) {
         g_on_send_all = false;
@@ -404,7 +401,7 @@ static u32 gh_hook(u32 ui) {
     u32 uio = FN(Component, UI_COMPONENT)(ui, GH_UIO_INDEX);
     if (uio) g_gh_uio = uio; // (before the screen's first frame draws its rows)
     u8 *cursor = (u8 *)(ui + GH_CURSOR);
-    bool menu = g_send_all && uio && uio == g_menu_uio && *(u32 *)(ui + GH_STATE) == GH_MENU &&
+    bool menu = send_rewards() && uio && uio == g_menu_uio && *(u32 *)(ui + GH_STATE) == GH_MENU &&
                 cursor[CURSOR_ROWS] == 3;
     if (!menu) {
         g_on_send_all = false;
@@ -481,7 +478,7 @@ static u32 trade_send_all(u32 ui, bool *full) {
 
 static u32 trade_hook(u32 ui) {
     u8 *cursor = (u8 *)(ui + TRADE_CURSOR);
-    bool menu = g_trade_all && g_trade_row && *(u8 *)(ui + TRADE_SUBSTATE) == 0 && cursor[CURSOR_ROWS] == 3;
+    bool menu = send_trade() && g_trade_row && *(u8 *)(ui + TRADE_SUBSTATE) == 0 && cursor[CURSOR_ROWS] == 3;
     if (!menu) {
         g_on_send_all = false;
         return ORIGINAL(Is, g_trade_hook)(ui);
@@ -525,7 +522,7 @@ static void trade_menu_hook(u32 uio) {
     g_trade_uio = uio;
     u32 gui = *(u32 *)(uio + UIO_GUI);
     g_trade_row = gui && *(u32 *)(gui + GUI_INSTANCES) > TM_ROW_FOURTH;
-    bool ours = g_trade_all && g_trade_row;
+    bool ours = send_trade() && g_trade_row;
     if (ours != was_ours) *(u32 *)(uio + TM_FLAGS) |= 1 | 4 | 8;
     u32 flags = *(u32 *)(uio + TM_FLAGS);
     ORIGINAL(Method, g_trade_menu_hook)(uio);
@@ -565,7 +562,7 @@ static void rows_hook(u32 uio, u32 list, u32 flag) {
     bool three = count == 3 && mode < 32 && (RESULT_MODES >> mode & 1) && entries &&
                  *(u16 *)(entries + 12 + 6) == MSG_RESULT && *(u16 *)(entries + 12 + 8) == MSG_SEND;
     bool two = count == 2 && mode == MODE_APPRAISAL && uio == g_result_uio && entries;
-    bool feature = uio == g_monnyan_uio ? g_monnyan_all : g_send_all;
+    bool feature = uio == g_monnyan_uio ? send_monnyan() : send_rewards();
     bool ours = feature && flag && known && (three || two);
     if (!ours) {
         if ((uio == g_monnyan_uio || uio == g_gh_uio) && feature && flag && entries && count == 3) // (why it stays)

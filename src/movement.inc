@@ -10,7 +10,7 @@ typedef void (*SetMotionRate)(u32 actor, float rate);
 
 static ForgeHook g_motion_rate_hook;
 static bool g_motion_rate_hooked, g_sprint_stamina_ready;
-static bool g_faster_gathering = true, g_faster_sprint = true, g_reduce_sprint_stamina = true;
+// (x1 speeds and 100% stamina use change nothing: the menu shows them as off)
 static float g_gathering_speed = 1.50f, g_sprint_speed = 1.20f, g_sprint_stamina_percent = 0.0f;
 static struct {
     u32 hunter;
@@ -37,9 +37,9 @@ static bool is_gathering_motion(u32 hunter) {
 static void motion_rate_hook(u32 actor, float rate) {
     // The motion setter is shared by several object types. Check the player
     // manager before reading fields that only exist on a hunter.
-    if (actor && rate > 0.0f && (g_faster_gathering || g_faster_sprint) && actor == local_hunter()) {
-        if (g_faster_gathering && is_gathering_motion(actor)) rate *= g_gathering_speed;
-        if (g_faster_sprint && is_normal_sprint(actor)) rate *= g_sprint_speed;
+    if (actor && rate > 0.0f && (g_gathering_speed != 1.0f || g_sprint_speed != 1.0f) && actor == local_hunter()) {
+        if (g_gathering_speed != 1.0f && is_gathering_motion(actor)) rate *= g_gathering_speed;
+        if (g_sprint_speed != 1.0f && is_normal_sprint(actor)) rate *= g_sprint_speed;
     }
     ORIGINAL(SetMotionRate, g_motion_rate_hook)(actor, rate);
 }
@@ -49,7 +49,7 @@ static void update_sprint_stamina(void) {
     // Observe the result once per frame while the same local hunter stays in
     // ordinary sprint. Establish a fresh baseline when entering that action.
     u32 hunter = 0;
-    if (g_sprint_stamina_ready && g_reduce_sprint_stamina && g_sprint_stamina_percent < 100.0f)
+    if (g_sprint_stamina_ready && g_sprint_stamina_percent < 100.0f)
         hunter = local_hunter();
     if (!hunter || !is_normal_sprint(hunter)) {
         g_sprint_stamina.hunter = 0;
@@ -81,21 +81,4 @@ static void init_movement_options(void) {
     g_sprint_stamina_ready = code_is(LOCAL_HUNTER, 0xe92d4010, 0xe1a04000);
     forge_log(g_sprint_stamina_ready ? LOG_INFO : LOG_WARN, "personal-gathering: sprint stamina %s",
               g_sprint_stamina_ready ? "ready" : "unavailable; normal stamina cost retained");
-}
-
-static void render_movement_options(void) {
-    if (!g_main || !igTreeNode_Str("Movement and gathering speed")) return;
-    if (g_motion_rate_hooked) {
-        igCheckbox("Faster gathering", &g_faster_gathering);
-        igSliderFloat("Gathering speed", &g_gathering_speed, 1.0f, 4.0f, "x%.2f", 0);
-        igCheckbox("Faster sprint before detection", &g_faster_sprint);
-        igSliderFloat("Sprint speed", &g_sprint_speed, 1.0f, 2.0f, "x%.2f", 0);
-    }
-    if (g_sprint_stamina_ready) {
-        igCheckbox("Reduce sprint stamina before detection", &g_reduce_sprint_stamina);
-        igSliderFloat("Sprint stamina use", &g_sprint_stamina_percent, 0.0f, 100.0f, "%.0f%%", 0);
-    }
-    if (!g_motion_rate_hooked || !g_sprint_stamina_ready)
-        igTextUnformatted("Some movement options are unavailable. Check log.txt.", NULL);
-    igTreePop();
 }
