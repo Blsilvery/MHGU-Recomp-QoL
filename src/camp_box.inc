@@ -14,27 +14,36 @@ enum {
     CAMP_BANK_TEXT = 0x55bac0,
     CAMP_BOX_UPDATE = 0x713db8,
     CAMP_BOX_GET_CHILD = 0x65cb3c,
-    CAMP_GUI_SET_POSITION = 0x545c20,
-    CAMP_GUI_GET_Y = 0x545af8,
     CAMP_RESOURCE_MANAGER = 0x2126a64,
     CAMP_WINDOW_MANAGER = 0x1899458,
     CAMP_UNIT_ROOT = 0x2126f48,
     CAMP_SYSTEM = 0x188ca48,
     CAMP_INTERACTION_CONTROL = 0x188ad90,
+    CAMP_HUD_UPDATE = 0x66601c,  // the quest HUD (health, stamina, clock, party): per-frame update (hud)
+    CAMP_PANEL_SHOW = 0x56df00,  // a window's child GUI: show it unless shown (panel)
+    CAMP_PANEL_HIDE = 0x56e04c,  // ...hide it if shown (panel)
+    CAMP_HUD_SLOT = 0x150,
     CAMP_BOX_SLOT = 0x160,
     CAMP_BOARD_SLOT = 0x16c,
     CAMP_MESSAGE_COUNT = 42,
     CAMP_WAIT_LIMIT = 120,
     CAMP_STYLE_ROW = 7,
+    CAMP_HUD_HIDDEN_MAX = 64,
+    // A window (the quest HUD and the item box share the base class): its child GUIs, and each child's shown flag
+    WINDOW_CHILD_COUNT = 0x30,
+    WINDOW_CHILDREN = 0x34,
+    PANEL_SHOWN = 0x18,
 };
 
 typedef void *(*CampLoadResource)(void *, void *, const char *, u32);
 typedef const char *(*CampVillageText)(void *, u32, u32);
 typedef const char *(*CampBankText)(void *, u32, u32, u32);
-typedef float (__attribute__((pcs("aapcs-vfp"))) *CampGetY)(void *, u32);
-typedef void (__attribute__((pcs("aapcs-vfp"))) *CampSetPosition)(void *, u32, float, float);
 
-static ForgeHook g_camp_talk_hook, g_camp_village_text_hook, g_camp_bank_text_hook, g_camp_box_update_hook;
+static ForgeHook g_camp_talk_hook, g_camp_village_text_hook, g_camp_bank_text_hook, g_camp_box_update_hook,
+    g_camp_hud_hook;
+// The quest HUD's panels hidden while the camp box is open, to show again once it closes
+static u8 *g_camp_hud_hidden[CAMP_HUD_HIDDEN_MAX];
+static u32 g_camp_hud_hidden_count;
 static bool g_camp_ready;
 static const char g_camp_languages[][4] = {"eng", "fre", "spa", "ger", "ita", "chT", "chS"};
 static struct {
@@ -205,6 +214,43 @@ static bool camp_owns_item_box(const u8 *box) {
            *camp_window_slot(g_camp.manager) == box;
 }
 
+#ifdef PERSONAL_RUNTIME_PROBE
+// Logs which of the box's child GUIs are shown (PANEL_SHOWN) and where their root instances sit, once the set of
+// shown children or the box state has stayed the same for half a second (so slide-in animations have finished).
+static void camp_probe_children(u8 *box) {
+    static u32 last_key, settle;
+    u32 count = *(u32 *)(box + WINDOW_CHILD_COUNT);
+    u8 **children = *(u8 ***)(box + WINDOW_CHILDREN);
+    if (!children) return;
+    u32 key = *(u32 *)(box + 0x40) * 0x9e3779b1u;
+    for (u32 i = 0; i < count && i < 32; i++)
+        if (children[i] && children[i][PANEL_SHOWN]) key ^= 1u << i;
+    if (key != last_key) {
+        last_key = key;
+        settle = 30;
+        return;
+    }
+    if (!settle || --settle) return;
+    forge_log(LOG_INFO, "camp-probe: state %u row %u, %u children", *(u32 *)(box + 0x40), *(u32 *)(box + 0x70),
+              count);
+    for (u32 i = 0; i < count; i++) {
+        u8 *child = children[i];
+        if (!child || !child[PANEL_SHOWN]) continue;
+        u8 *gui = *(u8 **)(child + 0x24);
+        u8 *root = gui && *(u32 *)(gui + 0x298) && *(u8 ***)(gui + 0xf8) ? (*(u8 ***)(gui + 0xf8))[0] : NULL;
+        if (!root) {
+            forge_log(LOG_INFO, "camp-probe:   child %u shown, no root instance", i);
+            continue;
+        }
+        forge_log(LOG_INFO, "camp-probe:   child %u x %d y %d (%u instances, flags %x)", i,
+                  (int)*(float *)(root + 0x90), (int)*(float *)(root + 0x94), *(u32 *)(gui + 0x298),
+                  *(u32 *)(gui + 0x280));
+    }
+}
+#endif
+
+static void camp_hide_hud(void);
+
 static void camp_item_box_update(u8 *box) {
     bool owned = camp_owns_item_box(box);
     u32 *pressed = NULL;
@@ -221,19 +267,62 @@ static void camp_item_box_update(u8 *box) {
 
     ORIGINAL(void (*)(u8 *), g_camp_box_update_hook)(box);
     if (pressed) *pressed |= PAD_A;
+    if (owned && camp_owns_item_box(box)) {
+#ifdef PERSONAL_RUNTIME_PROBE
+        camp_probe_children(box);
+#endif
+        camp_hide_hud();
+    }
 
-    // This child is the full-box root, including its title and cursor.
-    // Submenus keep their usual positions. Native updates can reset the root.
+    // This child is the full-box root menu; its Hunter Arts row stays greyed out. The box keeps its village layout,
+    // with the quest HUD hidden (camp_hide_hud).
     if (!owned || !camp_owns_item_box(box) || *(u32 *)(box + 0x40) != 1 ||
-        !*(u32 *)(box + 0x30) || !*(u32 *)(box + 0x34)) return;
+        !*(u32 *)(box + WINDOW_CHILD_COUNT) || !*(u32 *)(box + WINDOW_CHILDREN)) return;
     u8 *menu = FN(u8 *(*)(void *, u32), CAMP_BOX_GET_CHILD)(box, 0);
-    if (!menu) return;
-    menu[0xa4 + CAMP_STYLE_ROW] = 0;
-    void *gui = *(void **)(menu + 0x24);
-    if (!gui || !*(u32 *)((u8 *)gui + 0x298) || !*(void **)((u8 *)gui + 0xf8)) return;
-    float y = FN(CampGetY, CAMP_GUI_GET_Y)(gui, 0);
-    // 968 is the native right-column origin on the 1280x720 menu canvas.
-    FN(CampSetPosition, CAMP_GUI_SET_POSITION)(gui, 0, 968.0f, y);
+    if (menu) menu[0xa4 + CAMP_STYLE_ROW] = 0;
+}
+
+static bool camp_hud_hid(const u8 *panel) {
+    for (u32 i = 0; i < g_camp_hud_hidden_count; i++)
+        if (g_camp_hud_hidden[i] == panel) return true;
+    return false;
+}
+
+// The item box's submenus keep their village layout, much of it at the top left, where the quest HUD (health,
+// stamina, clock, party) is drawn over them. While the camp box is open the HUD's panels are hidden, as in the
+// village (from the box's update); the HUD's own update shows the ones hidden here again once the box has closed,
+// and the panels the HUD itself had hidden stay hidden.
+static void camp_hide_hud(void) {
+    u8 *hud = g_camp.manager ? *(u8 **)(g_camp.manager + CAMP_HUD_SLOT) : NULL;
+    u8 **panels = hud ? *(u8 ***)(hud + WINDOW_CHILDREN) : NULL;
+    if (!panels) return;
+    u32 count = *(u32 *)(hud + WINDOW_CHILD_COUNT), hidden = 0;
+    for (u32 i = 0; i < count; i++) {
+        u8 *panel = panels[i];
+        if (!panel || !panel[PANEL_SHOWN]) continue;
+        FN(void (*)(u8 *), CAMP_PANEL_HIDE)(panel);
+        if (!camp_hud_hid(panel) && g_camp_hud_hidden_count < CAMP_HUD_HIDDEN_MAX)
+            g_camp_hud_hidden[g_camp_hud_hidden_count++] = panel;
+        hidden++;
+    }
+    if (hidden) forge_log(LOG_INFO, "personal-gathering: camp box hid %u of %u HUD panels", hidden, count);
+}
+
+static void camp_hud_update(u8 *hud) {
+    ORIGINAL(void (*)(u8 *), g_camp_hud_hook)(hud);
+    u32 count = *(u32 *)(hud + WINDOW_CHILD_COUNT);
+    u8 **panels = *(u8 ***)(hud + WINDOW_CHILDREN);
+    if (panels && g_camp_hud_hidden_count && !(g_camp.window && camp_owns_item_box(g_camp.window))) {
+        u32 shown = 0;
+        for (u32 i = 0; i < count; i++) {
+            u8 *panel = panels[i];
+            if (!panel || !camp_hud_hid(panel) || panel[PANEL_SHOWN]) continue;
+            FN(void (*)(u8 *), CAMP_PANEL_SHOW)(panel);
+            shown++;
+        }
+        forge_log(LOG_INFO, "personal-gathering: camp box closed, %u HUD panels shown again", shown);
+        g_camp_hud_hidden_count = 0;
+    }
 }
 
 static void camp_clear_interaction(void) {
@@ -345,7 +434,6 @@ static void init_camp_box(void) {
         {CAMP_GMD_TYPE, 0xe59f0004}, {CAMP_GMD_STRING, 0xe5902088},
         {CAMP_VILLAGE_TEXT, 0xe590005c}, {CAMP_BANK_TEXT, 0xe92d4070},
         {CAMP_BOX_UPDATE, 0xe92d4070}, {CAMP_BOX_GET_CHILD, 0xe5900034},
-        {CAMP_GUI_SET_POSITION, 0xe92d4010}, {CAMP_GUI_GET_Y, 0xe5902298},
     };
     for (u32 i = 0; i < sizeof expected / sizeof *expected; i++) {
         if (!code_is(expected[i][0], expected[i][1], 0)) {
@@ -357,6 +445,11 @@ static void init_camp_box(void) {
                    hook(&g_camp_bank_text_hook, CAMP_BANK_TEXT, camp_bank_text) &&
                    hook(&g_camp_box_update_hook, CAMP_BOX_UPDATE, camp_item_box_update) &&
                    hook(&g_camp_talk_hook, CAMP_CAT_TALK, camp_talk);
-    if (g_camp_ready)
-        forge_log(LOG_INFO, "personal-gathering: camp item box ready");
+    if (!g_camp_ready) return;
+    forge_log(LOG_INFO, "personal-gathering: camp item box ready");
+    // Without these the box still opens, under the HUD
+    if (code_is(CAMP_HUD_UPDATE, 0xe92d4830, 0xe1a04000) && code_is(CAMP_PANEL_SHOW, 0xe92d4070, 0xe24dd018) &&
+        code_is(CAMP_PANEL_HIDE, 0xe92d4070, 0xe24dd018) && hook(&g_camp_hud_hook, CAMP_HUD_UPDATE, camp_hud_update))
+        return;
+    forge_log(LOG_WARN, "personal-gathering: quest HUD signature differs; the camp box opens under it");
 }

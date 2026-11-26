@@ -4,9 +4,9 @@
 
 本插件的目标，是把 MHGU 中一些繁琐、老旧的设定，调整得更接近《怪物猎人：世界》《怪物猎人：崛起》等新作的体验，同时尽量不影响存档安全和联机。每项功能都可以单独关闭。
 
-**当前版本：** v1.17.1 · 冲刺防误触版
+**当前版本：** v1.17.2 · 营地道具箱遮挡修复
 
-[下载 v1.17.1 完整安装包](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.1-sprint-friendly-controls/MHGU_Recomp_QoL_v1.17.1_Sprint_Friendly_Controls.zip) · [查看全部版本](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [English](README.md)
+[下载 v1.17.2 完整安装包](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.2-camp-box-fix/MHGU_Recomp_QoL_v1.17.2_Camp_Box_Fix.zip) · [查看全部版本](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [English](README.md)
 
 > **运行要求：** MHGU Recomp，游戏版本 1.4.0。
 
@@ -42,7 +42,7 @@
 
 ### 报酬、道具箱和其他便利功能
 
-- 在营地通过快递猫打开完整道具箱。出发前，在村庄或集会所调查道具箱，按 A 打开完整道具箱，按住左肩键 L 再按 A 打开猫猫看板。任务中在营地快递猫处总是打开完整道具箱。
+- 在营地通过快递猫打开完整道具箱。出发前，在村庄或集会所调查道具箱，按 A 打开完整道具箱，按住左肩键 L 再按 A 打开猫猫看板。任务中在营地快递猫处总是打开完整道具箱，打开期间会隐藏任务界面（HUD），以免遮挡菜单。
 - **报酬道具一键入箱：** 一个开关同时为任务报酬和鉴定界面、农场交易车（一次收取三辆）、猫猫探险队报酬加上"全部入箱"。道具箱装满时，剩余物品会保留在收取界面，不会被出售或丢弃。
 - 忽略环境寒冷和炎热影响，无需冷热饮。
 - 艾露猫干劲保持在 99。

@@ -4,9 +4,9 @@ A ready-to-install quality-of-life plugin for **Monster Hunter Generations Ultim
 
 The goal is to bring some of MHGU's dated, tedious systems closer to how newer games such as Monster Hunter: World and Monster Hunter Rise handle them, while staying careful with save data and multiplayer. Every feature can be turned off on its own.
 
-**Current release:** v1.17.1 · Sprint-Friendly Controls
+**Current release:** v1.17.2 · Camp Box Fix
 
-[Download the complete v1.17.1 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.1-sprint-friendly-controls/MHGU_Recomp_QoL_v1.17.1_Sprint_Friendly_Controls.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
+[Download the complete v1.17.2 installer](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases/download/v1.17.2-camp-box-fix/MHGU_Recomp_QoL_v1.17.2_Camp_Box_Fix.zip) · [All releases](https://github.com/Blsilvery/MHGU-Recomp-QoL/releases) · [简体中文](README_zh-CN.md)
 
 > **Requires:** MHGU Recomp, game version 1.4.0.
 
@@ -42,7 +42,7 @@ If **Put transport items in the item pouch** is enabled, eligible carry items su
 
 ### Rewards, storage, and other options
 
-- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while L + A (hold the left shoulder button, then press A) opens the Palico Board. During a quest, the camp courier always opens the full item box.
+- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while L + A (hold the left shoulder button, then press A) opens the Palico Board. During a quest, the camp courier always opens the full item box, and the quest HUD is hidden while it is open so it doesn't cover the menus.
 - **Send all rewards to the Item Box:** one switch adds a send-all entry to the quest reward and appraisal screens, the farm trade carts (all three at once), and the Meownster Hunters rewards. If the box is full, remaining items stay available; the mod does not sell or discard them.
 - Ignore ambient heat and cold, so hot and cool drinks are not required.
 - Keep Palico enthusiasm at 99.
