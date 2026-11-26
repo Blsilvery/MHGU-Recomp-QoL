@@ -365,7 +365,8 @@ static void camp_talk(u8 *npc) {
             camp_finish(npc, manager);
         return;
     }
-    if (!g_camp_ready || !camp_in_quest() || npc[4] != 0 || (g_camp.npc && g_camp.npc != npc)) {
+    if (!g_full_box && g_camp.npc == npc) camp_clear_interaction(); // (switched off while the box was loading)
+    if (!g_full_box || !g_camp_ready || !camp_in_quest() || npc[4] != 0 || (g_camp.npc && g_camp.npc != npc)) {
         ORIGINAL(void (*)(u8 *), g_camp_talk_hook)(npc);
         return;
     }

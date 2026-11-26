@@ -68,7 +68,7 @@ static u32 text_language(void) {
 enum {
     T_TITLE, T_LANGUAGE, T_AUTO, T_OFF, T_UNAVAILABLE, T_PARTLY,
     T_GATHERING, T_TOOLLESS, T_GATHER_ALL, T_GATHERING_SPEED, T_FULL_POUCH,
-    T_ITEMS, T_SEND_ALL, T_CARRY_ITEMS, T_COMBINE,
+    T_ITEMS, T_FULL_BOX, T_SEND_ALL, T_CARRY_ITEMS, T_COMBINE,
     T_QUEST, T_AUTO_GOALS, T_AUTO_ACCOUNT, T_DELIVER_ANYWHERE, T_FINISH_QUEST, T_SKIP_DELAY,
     T_HUNTING, T_NO_EXTREME, T_AUTO_MAP, T_MARK_LARGE, T_THREE_ARTS, T_SPRINT_SPEED, T_STAMINA_USE, T_MAX_MOOD,
     T_SETTINGS_DEFAULTS, T_SETTINGS_LOADED, T_SETTINGS_SAVED, T_SETTINGS_NOT_SAVED,
@@ -123,6 +123,15 @@ static const char *const g_texts[T_COUNT][LANG_COUNT] = {
     [T_ITEMS] = {"Items and rewards###items", "Objets et récompenses###items", "Objetos y recompensas###items",
                  "Items und Belohnungen###items", "Oggetti e ricompense###items", "道具與報酬###items",
                  "道具与报酬###items", "아이템과 보상###items"}, // (Korean draft)
+    // (the Traditional uses only characters already in fonts/cjk-hant.otf; Korean draft)
+    [T_FULL_BOX] = {"Full item box at village and hub boxes and the camp courier (L + A: Palico Board)",
+                    "Coffre complet au village, au hall et chez le livreur du camp (L + A : Palicos)",
+                    "Baúl completo en la aldea, la sala y el mensajero del campamento (L + A: Felyne)",
+                    "Volle Objektbox im Dorf, in der Halle und beim Lager-Kurier (L + A: Palicos)",
+                    "Cassa completa al villaggio, nella sala e dal corriere del campo (L + A: Palico)",
+                    "完整道具箱（所有道具箱，含任務中的貓）",
+                    "完整道具箱（村庄与集会所的箱子、任务中的营地快递猫；L + A：猫猫看板）",
+                    "전체 아이템 박스 (마을·집회소 박스와 캠프 배달 아이루, L + A: 아이루 게시판)"},
     [T_SEND_ALL] = {"Send all rewards to the Item Box (quests, appraisal, farm trade cart, Meownster Hunters)",
                     "Tout envoyer au coffre (quêtes, expertise, chariot de la ferme, Chasseurs Palicos)",
                     "Enviar todo al baúl (misiones, tasación, carro de la granja, Cazadores Felyne)",

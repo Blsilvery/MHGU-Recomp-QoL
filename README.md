@@ -42,7 +42,7 @@ If **Put transport items in the item pouch** is enabled, eligible carry items su
 
 ### Rewards, storage, and other options
 
-- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while L + A (hold the left shoulder button, then press A) opens the Palico Board. During a quest, the camp courier always opens the full item box, and the quest HUD is hidden while it is open so it doesn't cover the menus.
+- Open the full item box from the camp courier. Before a quest, interact with the village or hub item box: A opens the full item box, while L + A (hold the left shoulder button, then press A) opens the Palico Board. During a quest, the camp courier always opens the full item box, and the quest HUD is hidden while it is open so it doesn't cover the menus. Turn off **Full item box** under **Items and rewards** to use the game's own boxes and courier again.
 - **Send all rewards to the Item Box:** one switch adds a send-all entry to the quest reward and appraisal screens, the farm trade carts (all three at once), and the Meownster Hunters rewards. If the box is full, remaining items stay available; the mod does not sell or discard them.
 - Ignore ambient heat and cold, so hot and cool drinks are not required.
 - Keep Palico enthusiasm at 99.
@@ -62,7 +62,7 @@ The camp courier's item box menu uses the game's own text, including a translati
 Press **Insert** → **MHGU Recomp QoL**. The **Language** list is at the top, and the options are grouped in four submenus:
 
 - **Gathering** — no tools needed, one-action gathering and carving, and gathering speed.
-- **Items and rewards** — send all rewards to the Item Box, transport items in the pouch, and item combinations.
+- **Items and rewards** — the full item box, send all rewards to the Item Box, transport items in the pouch, and item combinations.
 - **Quests and delivery** — automatic delivery, settling other account items, manual item-pouch delivery, and the quest shortcuts.
 - **Hunting** — hot and cool drinks, map and large-monster markers, Hunter Arts, sprint speed and stamina, and Palico enthusiasm.
 

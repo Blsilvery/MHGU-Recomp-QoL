@@ -6,6 +6,9 @@ enum {
 
 static ForgeHook g_box_menu_hook, g_box_open_hook;
 static bool g_box_hooked;
+// The full item box: the home box (and L + A for the Palico Board) at village and hub boxes, and at the camp courier
+// during a quest (camp_box.inc). Off: those boxes are the game's own. Ready: either part hooked (set in forge_onInit).
+static bool g_full_box = true, g_full_box_ready;
 
 static bool box_allows_equipment(void) {
     u32 quest = forge_singleton_getInstanceByName("sQuest");
@@ -14,13 +17,13 @@ static bool box_allows_equipment(void) {
 
 static u32 box_menu_hook(u8 *menu) {
     // A zero flag selects the full equipment-box menu in the original initializer.
-    if (g_box_hooked && menu && box_allows_equipment())
+    if (g_box_hooked && g_full_box && menu && box_allows_equipment())
         *(u32 *)(menu + 0x3c) = 0;
     return ((u32 (*)(u8 *))g_box_menu_hook.original)(menu);
 }
 
 static u32 box_open_hook(u32 owner, u32 arg, u32 x, u32 y, u32 mode) {
-    if (g_box_hooked && forge_input_isDown(BUTTON_L) && box_allows_equipment())
+    if (g_box_hooked && g_full_box && forge_input_isDown(BUTTON_L) && box_allows_equipment())
         return ((u32 (*)(u32, u32, u32, u32))(g_main + OPEN_PALICO_BOX))(owner, arg, 0, 0);
     return ((u32 (*)(u32, u32, u32, u32, u32))g_box_open_hook.original)(owner, arg, x, y, mode);
 }

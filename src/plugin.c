@@ -830,6 +830,8 @@ EXPORT void forge_onInit(void) {
     settings_load(); // (before the hooks: a feature whose hooks fail is still switched off below)
     init_better_box();
     init_camp_box();
+    g_full_box_ready = g_box_hooked || g_camp_ready;
+    if (!g_full_box_ready) g_full_box = false;
     init_field_options();
     init_movement_options();
     init_auto_delivery();
@@ -982,6 +984,8 @@ static void render_menu(void) {
         igTreePop();
     }
     if (igTreeNode_Str(tr(T_ITEMS))) {
+        render_switch(T_FULL_BOX, &g_full_box, g_full_box_ready);
+        if (g_full_box_ready && !(g_box_hooked && g_camp_ready)) igTextUnformatted(tr(T_PARTLY), NULL);
         render_switch(T_SEND_ALL, &g_send_all, g_send_all_ready);
         if (g_send_all_ready && !(g_rewards_hooked && g_trade_hooked && g_monnyan_hooked))
             igTextUnformatted(tr(T_PARTLY), NULL);

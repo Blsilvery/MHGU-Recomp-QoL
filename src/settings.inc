@@ -43,6 +43,7 @@ static const Setting g_settings[] = {
     {"no_pickaxe_or_bug_net", &g_toolless, NULL, 0, 0, &g_toolless_hooked, NO_CHOICE},
     {"gather_whole_spot", &g_gather_all, NULL, 0, 0, &g_gather_hooked, NO_CHOICE},
     {"gathering_speed", NULL, &g_gathering_speed, 1.0f, 4.0f, &g_motion_rate_hooked, NO_CHOICE},
+    {"full_item_box", &g_full_box, NULL, 0, 0, &g_full_box_ready, NO_CHOICE},
     {"send_all_rewards", &g_send_all, NULL, 0, 0, &g_send_all_ready, NO_CHOICE},
     {"transport_items_in_pouch", &g_carry_items, NULL, 0, 0, &g_carry_items_hooked, NO_CHOICE},
     {"always_combine", &g_combine_always, NULL, 0, 0, &g_combine_hooked, NO_CHOICE},
